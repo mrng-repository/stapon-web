@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="max-width: 640px; margin: 40px auto; padding: 0 16px;">
+  <div style="background: #ffffff; border-radius: 16px; padding: 24px; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08); border: 1px solid #e5e7eb;">
+    <h1 style="font-size: 24px; font-weight: 700; margin-bottom: 16px; color: #111827;">
+      {{ title }}
+    </h1>
+
+    <p style="font-size: 15px; line-height: 1.9; color: #374151; margin-bottom: 20px;">
+      {{ message }}
+    </p>
+
+    {% if login_url %}
+      <div style="margin-bottom: 20px;">
+        <div style="font-size: 14px; font-weight: 600; color: #111827; margin-bottom: 8px;">
+          URL
+        </div>
+        <div style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 10px; padding: 12px; font-size: 14px; line-height: 1.7; word-break: break-all; color: #111827;">
+          {{ login_url }}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if show_browser_note %}
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px; margin-bottom: 20px;">
+        <p style="font-size: 14px; line-height: 1.8; color: #1e3a8a; margin: 0;">
+          右上メニューから「ブラウザで開く」を選んでも利用できます。
+        </p>
+      </div>
+    {% endif %}
+
+    <div style="margin-top: 24px;">
+      <a href="/" style="display: inline-block; padding: 12px 18px; background: #2563eb; color: #ffffff; text-decoration: none; border-radius: 10px; font-size: 14px; font-weight: 600;">
+        トップへ戻る
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
