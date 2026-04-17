@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}新規登録 | スタポン{% endblock %}
+
+{% block content %}
+<div class="stpn-auth-wrap">
+    <div class="stpn-auth-card">
+        <h1 class="stpn-auth-title">新規アカウント作成</h1>
+        <p class="stpn-auth-subtitle">
+            店舗アカウントを作成して、スタンプカードやクーポンを管理します。
+        </p>
+
+        {% for message in messages %}
+            <div class="stpn-message">{{ message }}</div>
+        {% endfor %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="stpn-form-group">
+                <label for="{{ form.store_name.id_for_label }}">店舗名</label>
+                {{ form.store_name }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.email.id_for_label }}">メールアドレス</label>
+                {{ form.email }}
+            </div>
+
+            <button type="submit" class="stpn-btn">認証コードを送信</button>
+        </form>
+
+        <div class="stpn-link-wrap">
+            <a href="{% url 'store_login' %}">ログインはこちら</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

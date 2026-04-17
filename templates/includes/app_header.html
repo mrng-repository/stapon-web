@@ -1,0 +1,18 @@
+<header class="stpn-shared-header">
+    <div class="stpn-shared-header-inner">
+
+        <div class="stpn-shared-header-left">
+            
+        </div>
+
+        <div class="stpn-shared-header-right">
+            {% if header_subtext %}
+                <span class="stpn-header-subtext">{{ header_subtext }}</span>
+            {% endif %}
+
+            {% if logout_url %}
+                <a href="{{ logout_url }}" class="stpn-header-action-btn">ログアウト</a>
+            {% endif %}
+        </div>
+    </div>
+</header>

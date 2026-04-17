@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}付与用QR作成 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_title="" back_url="/store/dashboard/" header_subtext=request.user.store_name logout_url="/store/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">付与用QR作成</h1>
+        <p class="stpn-page-subtext">店頭で顧客に読み取ってもらうURLを発行します。</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message }}</div>
+    {% endfor %}
+
+    <div class="stpn-card" style="margin-bottom:16px;">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="stpn-form-group">
+                <label for="{{ form.stamp_card.id_for_label }}">対象スタンプカード</label>
+                {{ form.stamp_card }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.grant_count.id_for_label }}">付与数</label>
+                {{ form.grant_count }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.expires_at.id_for_label }}">有効期限</label>
+                {{ form.expires_at }}
+            </div>
+
+            <button type="submit" class="stpn-btn">URLを発行する</button>
+        </form>
+    </div>
+
+    {% if qr_url %}
+        <div class="stpn-card">
+            <h2 class="stpn-card-title">発行結果</h2>
+
+            {% if selected_card %}
+                <p class="stpn-card-text">対象カード: {{ selected_card.title }}</p>
+            {% endif %}
+
+            {% if qr_image_base64 %}
+                <div style="margin-top:16px; text-align:center;">
+                    <img
+                        src="data:image/png;base64,{{ qr_image_base64 }}"
+                        alt="付与用QR"
+                        style="width:240px; max-width:100%; height:auto; border-radius:12px; border:1px solid #e5e7eb; background:#fff; padding:12px;"
+                    >
+                </div>
+            {% endif %}
+
+            <div style="margin-top:16px;">
+                <label style="display:block; margin-bottom:8px; font-weight:700;">QR用URL</label>
+                <textarea readonly style="width:100%; min-height:120px; padding:12px; border:1px solid #cfd9e8; border-radius:12px;">{{ qr_url }}</textarea>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="stpn-bottom-nav">
+        <a href="{% url 'store_dashboard' %}" class="stpn-back-link">
+            ← 戻る
+        </a>
+    </div>
+</div>
+{% endblock %}

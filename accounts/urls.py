@@ -1,0 +1,24 @@
+from django.urls import path
+from .views import (
+    store_login_view,
+    store_register_view,
+    otp_verify_view,
+    store_dashboard_view,
+    store_logout_view,
+    customer_login_view,
+    customer_otp_verify_view,
+    customer_dashboard_view,
+    customer_logout_view,
+)
+
+urlpatterns = [
+    path('login/', store_login_view, name='store_login'),
+    path('register/', store_register_view, name='store_register'),
+    path('otp/verify/', otp_verify_view, name='otp_verify'),
+    path('dashboard/', store_dashboard_view, name='store_dashboard'),
+    path('logout/', store_logout_view, name='store_logout'),
+    path('customer/login/', customer_login_view, name='customer_login'),
+    path('customer/otp/', customer_otp_verify_view, name='customer_otp_verify'),
+    path('customer/dashboard/', customer_dashboard_view, name='customer_dashboard'),
+    path('customer/logout/', customer_logout_view, name='customer_logout'),
+]

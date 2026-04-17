@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}スタンプカード削除 | スタポン{% endblock %}
+
+{% block header %}
+<header class="stpn-header">
+    <div class="stpn-header-inner">
+        <a href="{% url 'store_dashboard' %}" class="stpn-brand">スタポン</a>
+        <div class="stpn-header-right">
+            <span class="stpn-header-text">{{ request.user.store_name }}</span>
+            <a href="{% url 'store_logout' %}" class="stpn-header-btn">ログアウト</a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">スタンプカード削除</h1>
+        <p class="stpn-page-subtext">このカードを削除してよいか確認します。</p>
+    </div>
+
+    <div class="stpn-card">
+        <p style="margin:0 0 12px; font-size:16px; font-weight:700;">
+            「{{ stampcard.title }}」を削除しますか？
+        </p>
+
+        <p style="margin:0 0 20px; color:#6b7280; line-height:1.6;">
+            削除すると元に戻せません。
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button
+                    type="submit"
+                    style="min-height:48px; padding:0 16px; border:none; border-radius:12px; background:#dc2626; color:#fff; font-weight:700; cursor:pointer;"
+                >
+                    削除する
+                </button>
+
+                <a
+                    href="{% url 'stampcard_list_create' %}?tab=list"
+                    style="display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 16px; border-radius:12px; text-decoration:none; background:#f3f4f6; color:#111827; font-weight:700;"
+                >
+                    キャンセル
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

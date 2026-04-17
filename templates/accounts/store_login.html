@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}店舗ログイン | スタポン{% endblock %}
+
+{% block content %}
+<div class="stpn-auth-wrap">
+    <div class="stpn-auth-card">
+        <h1 class="stpn-auth-title">店舗ログイン</h1>
+        <p class="stpn-auth-subtitle">
+            スタポンの店舗管理画面です。<br>
+            メールアドレスを入力して認証コードを受け取ってください。
+        </p>
+
+        {% for message in messages %}
+            <div class="stpn-message">{{ message }}</div>
+        {% endfor %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="stpn-form-group">
+                <label for="{{ form.email.id_for_label }}">メールアドレス</label>
+                {{ form.email }}
+            </div>
+            <button type="submit" class="stpn-btn">認証コードを送信</button>
+        </form>
+
+        <div class="stpn-link-wrap">
+            <a href="{% url 'store_register' %}">新規アカウント作成はこちら</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}特典クーポン | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_subtext=customer_user.email logout_url="/store/customer/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">特典クーポン</h1>
+        <p class="stpn-page-subtext">利用可能なクーポンを確認できます。</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message|safe }}</div>
+    {% endfor %}
+
+    <div style="margin-bottom: 24px;">
+        <h2 style="margin:0 0 12px; font-size:18px; font-weight:800;">利用可能</h2>
+
+        <div class="stpn-grid">
+            {% for coupon in available_coupons %}
+                <a href="{% url 'customer_coupon_detail' coupon.pk %}" class="stpn-card stpn-card-link">
+                    <span class="stpn-badge">COUPON</span>
+
+                    <h2 class="stpn-card-title">
+                        {{ coupon.reward_name }}
+                    </h2>
+
+                    <p class="stpn-card-text">
+                        店舗: {{ coupon.stamp_card.store_user.store_name }}
+                    </p>
+
+                    <p class="stpn-card-text">
+                        状態:
+                        <span style="color:#16a34a; font-weight:700;">利用可能</span>
+                    </p>
+
+                    <p class="stpn-card-text">
+                        発行日: {{ coupon.issued_at }}
+                    </p>
+                </a>
+            {% empty %}
+                <div class="stpn-card">
+                    <p class="stpn-card-text">利用可能なクーポンはありません。</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div>
+        <h2 style="margin:0 0 12px; font-size:18px; font-weight:800;">使用済み</h2>
+
+        <div class="stpn-grid">
+            {% for coupon in used_coupons %}
+                <div class="stpn-card" style="opacity:0.75;">
+                    <span class="stpn-badge" style="background:#f3f4f6; color:#4b5563;">USED</span>
+
+                    <h2 class="stpn-card-title">{{ coupon.reward_name }}</h2>
+
+                    <p class="stpn-card-text">店舗: {{ coupon.stamp_card.store_user.store_name }}</p>
+                    <p class="stpn-card-text">
+                        状態: <span style="color:#6b7280;">使用済み</span>
+                    </p>
+                    <p class="stpn-card-text">使用日時: {{ coupon.used_at }}</p>
+                </div>
+            {% empty %}
+                <div class="stpn-card">
+                    <p class="stpn-card-text">使用済みクーポンはありません。</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="stpn-bottom-nav">
+        <a href="{% url 'customer_dashboard' %}" class="stpn-back-link">← 戻る</a>
+    </div>
+</div>
+{% endblock %}

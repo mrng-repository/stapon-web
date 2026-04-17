@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}スタンプカード編集 | スタポン{% endblock %}
+
+{% block header %}
+<header class="stpn-header">
+    <div class="stpn-header-inner">
+        <a href="{% url 'store_dashboard' %}" class="stpn-brand">スタポン</a>
+        <div class="stpn-header-right">
+            <span class="stpn-header-text">{{ request.user.store_name }}</span>
+            <a href="{% url 'store_logout' %}" class="stpn-header-btn">ログアウト</a>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">スタンプカード編集</h1>
+        <p class="stpn-page-subtext">カード内容を更新します。</p>
+    </div>
+
+    <div class="stpn-card">
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="stpn-form-group">
+                <label for="{{ form.title.id_for_label }}">カード名</label>
+                {{ form.title }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.required_stamps.id_for_label }}">必要スタンプ数</label>
+                {{ form.required_stamps }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.reward_name.id_for_label }}">特典名</label>
+                {{ form.reward_name }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.description.id_for_label }}">説明</label>
+                {{ form.description }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.is_active.id_for_label }}">有効状態</label>
+                {{ form.is_active }}
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:18px;">
+                <button type="submit" class="stpn-btn" style="max-width:220px;">更新する</button>
+
+                <a
+                    href="{% url 'stampcard_list_create' %}?tab=list"
+                    style="display:inline-flex; align-items:center; justify-content:center; min-height:48px; padding:0 16px; border-radius:12px; text-decoration:none; background:#f3f4f6; color:#111827; font-weight:700;"
+                >
+                    一覧へ戻る
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

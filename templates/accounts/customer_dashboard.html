@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}顧客ダッシュボード | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_title="顧客ダッシュボード" header_subtext=customer_user.email logout_url="/store/customer/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">顧客ダッシュボード</h1>
+        <p class="stpn-page-subtext">{{ customer_user.email }}</p>
+    </div>
+
+    <div class="stpn-grid">
+        <a href="{% url 'customer_stampcard_list' %}" class="stpn-card stpn-card-link">
+            <span class="stpn-badge">STAMP CARD</span>
+            <h2 class="stpn-card-title">スタンプカードを見る</h2>
+            <p class="stpn-card-text">
+                利用中のスタンプカードや特典状況を確認します。
+            </p>
+        </a>
+
+        <a href="{% url 'customer_coupon_list' %}" class="stpn-card stpn-card-link">
+            <span class="stpn-badge">COUPON</span>
+            <h2 class="stpn-card-title">特典クーポン</h2>
+            <p class="stpn-card-text">
+                利用可能な特典クーポンを確認します。
+            </p>
+
+            {% if available_coupon_count > 0 %}
+                <p class="stpn-card-text" style="margin-top:8px; color:#16a34a; font-weight:700;">
+                    利用可能クーポン {{ available_coupon_count }} 件
+                </p>
+            {% endif %}
+        </a>
+
+        <div class="stpn-card">
+            <span class="stpn-badge">ACCOUNT</span>
+            <h2 class="stpn-card-title">アカウント</h2>
+            <p class="stpn-card-text">メールアドレス: {{ customer_user.email }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

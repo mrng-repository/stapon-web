@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}保有スタンプカード | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_title="保有スタンプカード" back_url="/store/customer/dashboard/" logout_url="/store/customer/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">保有スタンプカード</h1>
+        <p class="stpn-page-subtext">{{ customer_user.email }}</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message }}</div>
+    {% endfor %}
+
+    <div class="stpn-grid">
+        {% for item in customer_stampcards %}
+            <a href="{% url 'customer_stampcard_detail' item.pk %}" class="stpn-card stpn-card-link">
+                <span class="stpn-badge">STAMP CARD</span>
+                <h2 class="stpn-card-title">{{ item.stamp_card.title }}</h2>
+                <p class="stpn-card-text">店舗: {{ item.stamp_card.store_user.store_name }}</p>
+                <p class="stpn-card-text">現在のスタンプ数: {{ item.current_stamps }}</p>
+                <p class="stpn-card-text">必要スタンプ数: {{ item.stamp_card.required_stamps }}</p>
+                <p class="stpn-card-text">特典: {{ item.stamp_card.reward_name }}</p>
+            </a>
+        {% empty %}
+            <div class="stpn-card">
+                <p class="stpn-card-text">まだ保有しているスタンプカードはありません。</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="stpn-bottom-nav">
+        <a href="{% url 'customer_dashboard' %}" class="stpn-back-link">
+            ← 戻る
+        </a>
+    </div>
+</div>
+
+
+{% endblock %}

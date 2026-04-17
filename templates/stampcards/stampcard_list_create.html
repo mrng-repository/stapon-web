@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}スタンプカード管理 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_title="" back_url="/store/dashboard/" header_subtext=request.user.store_name logout_url="/store/logout/" %}
+{% endblock %}
+
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">スタンプカード管理</h1>
+        <p class="stpn-page-subtext">スタンプカードの作成・確認・編集・削除を行います。</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message }}</div>
+    {% endfor %}
+
+    <div class="stpn-tab-nav" style="display:flex; gap:10px; margin-bottom:18px;">
+
+        <a
+            href="{% url 'stampcard_list_create' %}?tab=create"
+            class="stpn-tab {% if active_tab == 'create' %}is-active{% endif %}"
+        >
+            作成
+        </a>
+
+        <a
+            href="{% url 'stampcard_list_create' %}?tab=list"
+            class="stpn-tab {% if active_tab == 'list' %}is-active{% endif %}"
+        >
+            一覧
+        </a>
+
+    </div>
+
+    {% if active_tab == 'create' %}
+        <div class="stpn-card">
+            <h2 class="stpn-card-title">新しいカードを作成</h2>
+
+            <form method="post" style="margin-top: 16px;">
+                {% csrf_token %}
+
+                <div class="stpn-form-group">
+                    <label for="{{ form.title.id_for_label }}">カード名</label>
+                    {{ form.title }}
+                </div>
+
+                <div class="stpn-form-group">
+                    <label for="{{ form.required_stamps.id_for_label }}">必要スタンプ数</label>
+                    {{ form.required_stamps }}
+                </div>
+
+                <div class="stpn-form-group">
+                    <label for="{{ form.reward_name.id_for_label }}">特典名</label>
+                    {{ form.reward_name }}
+                </div>
+
+                <div class="stpn-form-group">
+                    <label for="{{ form.description.id_for_label }}">説明</label>
+                    {{ form.description }}
+                </div>
+
+                <div class="stpn-form-group">
+                    <label for="{{ form.is_active.id_for_label }}">有効状態</label>
+                    {{ form.is_active }}
+                </div>
+
+                <button type="submit" class="stpn-btn">保存する</button>
+            </form>
+
+            <div class="stpn-bottom-nav">
+                <a href="{% url 'store_dashboard' %}" class="stpn-back-link">
+                    ← 戻る
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    {% if active_tab == 'list' %}
+        <div class="stpn-card">
+            <h2 class="stpn-card-title">作成済みカード一覧</h2>
+
+            {% if stampcards %}
+                <div style="margin-top: 16px; display: grid; gap: 12px;">
+                    {% for card in stampcards %}
+                        <div style="padding: 14px; border: 1px solid #e5eefc; border-radius: 14px; background: #fdfefe;">
+                            <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                                <div style="flex:1;">
+                                    <p style="margin:0 0 6px; font-size:16px; font-weight:800;">{{ card.title }}</p>
+                                    <p style="margin:0 0 6px; font-size:14px; color:#6b7280;">
+                                        必要スタンプ数: {{ card.required_stamps }}
+                                    </p>
+                                    <p style="margin:0 0 6px; font-size:14px; color:#6b7280;">
+                                        特典: {{ card.reward_name }}
+                                    </p>
+                                    {% if card.description %}
+                                        <p style="margin:0; font-size:13px; color:#6b7280; line-height:1.6;">
+                                            {{ card.description }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+
+                                <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                                    {% if card.is_active %}
+                                        <span class="stpn-badge">有効</span>
+                                    {% else %}
+                                        <span class="stpn-badge" style="background:#f3f4f6; color:#4b5563;">無効</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+                                <a
+                                    href="{% url 'stampcard_edit' card.pk %}"
+                                    style="padding:10px 14px; border-radius:10px; text-decoration:none; background:#eff6ff; color:#1d4ed8; font-weight:700; font-size:13px;"
+                                >
+                                    編集
+                                </a>
+
+                                <a
+                                    href="{% url 'stampcard_delete' card.pk %}"
+                                    style="padding:10px 14px; border-radius:10px; text-decoration:none; background:#fef2f2; color:#dc2626; font-weight:700; font-size:13px;"
+                                >
+                                    削除
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="margin-top:16px; color:#6b7280;">まだスタンプカードは作成されていません。</p>
+            {% endif %}
+
+            <div class="stpn-bottom-nav">
+                <a href="{% url 'store_dashboard' %}" class="stpn-back-link">
+                    ← 戻る
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

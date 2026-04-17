@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}スタポン{% endblock %}</title>
+    <style>
+        :root {
+            --stpn-bg: linear-gradient(180deg, #eef7ff 0%, #f8fbff 100%);
+            --stpn-card-bg: #ffffff;
+            --stpn-text: #1f2937;
+            --stpn-subtext: #6b7280;
+            --stpn-border: #e5eefc;
+            --stpn-primary: #2563eb;
+            --stpn-primary-light: #38bdf8;
+            --stpn-dark: #111827;
+            --stpn-shadow: 0 10px 30px rgba(37, 99, 235, 0.10);
+            --stpn-radius-lg: 20px;
+            --stpn-radius-md: 14px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Helvetica Neue", Arial, sans-serif;
+            background: var(--stpn-bg);
+            color: var(--stpn-text);
+        }
+
+        .stpn-app {
+            min-height: 100vh;
+        }
+
+        .stpn-shared-header {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .stpn-shared-header-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            min-height: 60px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .stpn-shared-header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .stpn-shared-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .stpn-back-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 0 12px;
+            border-radius: 12px;
+            background: #ffffff;
+            border: 1px solid #dbe4f0;
+            color: #1f2937;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .stpn-back-btn:hover {
+            background: #f8fafc;
+        }
+
+        .stpn-header-page-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: #111827;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stpn-header-subtext {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .stpn-header-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 38px;
+            padding: 0 14px;
+            border-radius: 12px;
+            background: #2563eb;
+            color: #fff;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 700;
+            box-shadow: 0 6px 14px rgba(37, 99, 235, 0.16);
+        }
+
+        .stpn-header-action-btn:hover {
+            opacity: 0.95;
+        }
+
+        .stpn-main {
+            width: 100%;
+        }
+
+        .stpn-auth-wrap {
+            min-height: calc(100vh - 0px);
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 32px 16px 24px;
+        }
+
+        .stpn-auth-card {
+            width: 100%;
+            max-width: 420px;
+            background: var(--stpn-card-bg);
+            border-radius: var(--stpn-radius-lg);
+            box-shadow: var(--stpn-shadow);
+            padding: 24px 20px;
+            border: 1px solid var(--stpn-border);
+        }
+
+        .stpn-auth-title {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--stpn-dark);
+        }
+
+        .stpn-auth-subtitle {
+            margin: 0 0 20px;
+            font-size: 14px;
+            color: var(--stpn-subtext);
+            line-height: 1.6;
+        }
+
+        .stpn-form-group {
+            margin-bottom: 16px;
+        }
+
+        .stpn-form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .stpn-form-group input {
+            width: 100%;
+            height: 46px;
+            padding: 0 12px;
+            border: 1px solid #cfd9e8;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .stpn-form-group input:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+        }
+
+        .stpn-btn {
+            width: 100%;
+            height: 48px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--stpn-primary-light) 0%, var(--stpn-primary) 100%);
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.18);
+        }
+
+        .stpn-btn:hover {
+            opacity: 0.96;
+        }
+
+        .stpn-link-wrap {
+            margin-top: 18px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .stpn-link-wrap a {
+            color: var(--stpn-primary);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .stpn-message {
+            margin-bottom: 14px;
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: #fff7ed;
+            color: #9a3412;
+            font-size: 14px;
+        }
+
+        .stpn-page-wrap {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 24px 16px 40px;
+        }
+
+        .stpn-page-head {
+            margin-bottom: 20px;
+        }
+
+        .stpn-page-title {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--stpn-dark);
+        }
+
+        .stpn-page-subtext {
+            margin: 0;
+            font-size: 14px;
+            color: var(--stpn-subtext);
+            line-height: 1.6;
+        }
+
+        .stpn-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+
+        .stpn-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 18px 16px;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+            border: 1px solid #e7eef8;
+        }
+
+        .stpn-card-link {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .stpn-card-title {
+            margin: 0 0 6px;
+            font-size: 17px;
+            font-weight: 800;
+            color: var(--stpn-dark);
+        }
+
+        .stpn-card-text {
+            margin: 0;
+            font-size: 13px;
+            color: var(--stpn-subtext);
+            line-height: 1.6;
+        }
+
+        .stpn-badge {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .stpn-form-group textarea,
+        .stpn-form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #cfd9e8;
+            border-radius: 12px;
+            font-size: 14px;
+            background: #fff;
+            box-sizing: border-box;
+        }
+
+        .stpn-form-group textarea:focus,
+        .stpn-form-group select:focus {
+            outline: none;
+            border-color: #60a5fa;
+            box-shadow: 0 0 0 4px rgba(96, 165, 250, 0.15);
+        }
+
+        .stpn-tab {
+            padding: 10px 16px;
+            border-radius: 999px;
+            text-decoration: none;
+            font-weight: 700;
+            background: #fff;
+            color: #1f2937;
+            border: 1px solid #dbe4f0;
+        }
+
+        .stpn-tab.is-active {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+        }
+
+        .stpn-bottom-nav {
+            margin-top: 32px;
+            margin-bottom: 12px;
+            padding: 0 4px;
+        }
+
+        .stpn-back-link {
+            display: inline-block;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2563eb;
+            text-decoration: none;
+        }
+
+        .stpn-back-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 640px) {
+            .stpn-shared-header-inner {
+                min-height: 56px;
+                padding: 0 14px;
+            }
+
+            .stpn-header-subtext {
+                display: none;
+            }
+
+            .stpn-header-page-title {
+                font-size: 16px;
+            }
+
+            .stpn-back-btn,
+            .stpn-header-action-btn {
+                min-height: 36px;
+                padding: 0 10px;
+                font-size: 12px;
+            }
+
+            .stpn-brand {
+                font-size: 18px;
+            }
+
+            .stpn-auth-wrap {
+                padding: 20px 14px 20px;
+            }
+
+            .stpn-auth-card {
+                padding: 20px 16px;
+                border-radius: 18px;
+            }
+
+            .stpn-auth-title,
+            .stpn-page-title {
+                font-size: 24px;
+            }
+
+            .stpn-page-wrap {
+                padding: 18px 14px 28px;
+            }
+
+            .stpn-header-text {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stpn-app">
+        {% block header %}{% endblock %}
+
+        <main class="stpn-main">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</body>
+</html>

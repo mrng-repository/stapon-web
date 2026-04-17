@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}認証コード入力 | スタポン{% endblock %}
+
+{% block content %}
+<div class="stpn-auth-wrap">
+    <div class="stpn-auth-card">
+        <h1 class="stpn-auth-title">認証コード入力</h1>
+        <p class="stpn-auth-subtitle">
+            {{ email }} に送信した認証コードを入力してください。
+        </p>
+
+        {% for message in messages %}
+            <div class="stpn-message">{{ message }}</div>
+        {% endfor %}
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="stpn-form-group">
+                <label for="{{ form.otp_code.id_for_label }}">認証コード</label>
+                {{ form.otp_code }}
+            </div>
+            <button type="submit" class="stpn-btn">認証する</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

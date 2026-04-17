@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}スタンプカード詳細 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_subtext=customer_user.email logout_url="/store/customer/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">{{ customer_stampcard.stamp_card.title }}</h1>
+        <p class="stpn-page-subtext">店舗: {{ customer_stampcard.stamp_card.store_user.store_name }}</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message|safe }}</div>
+    {% endfor %}
+
+    <div class="stpn-card" style="margin-bottom: 16px;">
+        <span class="stpn-badge">REWARD</span>
+        <h2 class="stpn-card-title">{{ customer_stampcard.stamp_card.reward_name }}</h2>
+        {% if customer_stampcard.stamp_card.description %}
+            <p class="stpn-card-text">{{ customer_stampcard.stamp_card.description }}</p>
+        {% endif %}
+    </div>
+
+    <div class="stpn-card" style="margin-bottom: 16px;">
+        <h2 class="stpn-card-title">現在のスタンプ状況</h2>
+        <p class="stpn-card-text">現在のスタンプ数: {{ current_stamps }}</p>
+        <p class="stpn-card-text">必要スタンプ数: {{ required_stamps }}</p>
+        <p class="stpn-card-text">特典まであと {{ remaining_stamps }} 個です。</p>
+
+        <div style="display:flex; gap:8px; margin-top:16px; flex-wrap:wrap;">
+            {% for i in "12345678901234567890"|make_list %}
+                {% if forloop.counter <= required_stamps %}
+                    <div
+                        style="
+                            width:44px;
+                            height:44px;
+                            border-radius:999px;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            font-weight:700;
+                            {% if forloop.counter <= current_stamps %}
+                                background:#2563eb;
+                                color:#fff;
+                            {% else %}
+                                background:#e5eefc;
+                                color:#6b7280;
+                            {% endif %}
+                        "
+                    >
+                        {{ forloop.counter }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="stpn-bottom-nav">
+        <a href="{% url 'customer_stampcard_list' %}" class="stpn-back-link">← 戻る</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}店舗管理画面 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_title="" header_subtext=request.user.store_name logout_url="/store/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">店舗管理画面</h1>
+        <p class="stpn-page-subtext">
+            スタンプカードやクーポンの設定をここから行います。
+        </p>
+    </div>
+
+    <div class="stpn-grid">
+        <a href="{% url 'stampcard_list_create' %}" class="stpn-card stpn-card-link">
+            <span class="stpn-badge">STAMP CARD</span>
+            <h2 class="stpn-card-title">スタンプカード作成</h2>
+            <p class="stpn-card-text">
+                配布するスタンプカードの内容や付与条件を設定します。
+            </p>
+        </a>
+
+        <a href="#" class="stpn-card stpn-card-link">
+            <span class="stpn-badge">COUPON</span>
+            <h2 class="stpn-card-title">クーポン作成</h2>
+            <p class="stpn-card-text">
+                来店促進用のクーポン内容や利用条件を設定します。
+            </p>
+        </a>
+
+        <a href="{% url 'stampcard_qr_create' %}" class="stpn-card stpn-card-link">
+            <span class="stpn-badge">QR</span>
+            <h2 class="stpn-card-title">付与用QR作成</h2>
+            <p class="stpn-card-text">
+                店頭で顧客に読み取ってもらう付与用QRを発行します。
+            </p>
+        </a>
+    </div>
+</div>
+{% endblock %}
