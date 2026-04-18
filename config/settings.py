@@ -141,3 +141,21 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'accounts.StoreUser'
+
+CSRF_FAILURE_VIEW = "core.views.csrf_failure"
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://stapon.retail-system.shop",
+]
+
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+LINE_CHANNEL_ID = os.getenv("LINE_CHANNEL_ID")
+LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
+LINE_REDIRECT_URI = os.getenv(
+    "LINE_REDIRECT_URI",
+    "https://stapon.retail-system.shop/store/auth/line/callback/"
+)

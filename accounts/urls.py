@@ -10,6 +10,7 @@ from .views import (
     customer_dashboard_view,
     customer_logout_view,
 )
+from . import views
 
 urlpatterns = [
     path('login/', store_login_view, name='store_login'),
@@ -21,4 +22,6 @@ urlpatterns = [
     path('customer/otp/', customer_otp_verify_view, name='customer_otp_verify'),
     path('customer/dashboard/', customer_dashboard_view, name='customer_dashboard'),
     path('customer/logout/', customer_logout_view, name='customer_logout'),
+    path("auth/line/login/", views.line_login_start, name="line_login_start"),
+    path("auth/line/callback/", views.line_login_callback, name="line_login_callback"),
 ]

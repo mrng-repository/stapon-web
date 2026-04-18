@@ -1,27 +1,233 @@
-{% extends "base.html" %}
-
+{% extends 'base.html' %}
 {% block title %}顧客ログイン | スタポン{% endblock %}
 
 {% block content %}
 <div class="stpn-auth-wrap">
-    <div class="stpn-auth-card">
-        <h1 class="stpn-auth-title">顧客ログイン</h1>
-        <p class="stpn-auth-subtitle">
-            メールアドレスを入力して認証コードを受け取ってください。
-        </p>
+  <div class="stpn-auth-card">
+    <h1 class="stpn-auth-title">顧客ログイン</h1>
+    <p class="stpn-auth-subtitle">
+      ログイン方法を選択してください。
+    </p>
 
-        {% for message in messages %}
-            <div class="stpn-message">{{ message }}</div>
-        {% endfor %}
+    {% for message in messages %}
+      <div class="stpn-message">{{ message }}</div>
+    {% endfor %}
 
-        <form method="post">
+    <div class="stpn-login-methods">
+      <div class="stpn-method-block">
+        <button type="button" class="stpn-method-btn stpn-method-btn-mail" id="mail-login-toggle">
+          メールアドレスでログイン
+        </button>
+
+        <div id="mail-login-form-area" class="stpn-mail-form-area">
+          <form method="post">
             {% csrf_token %}
             <div class="stpn-form-group">
-                <label for="{{ form.email.id_for_label }}">メールアドレス</label>
-                {{ form.email }}
+              <label for="{{ form.email.id_for_label }}">メールアドレス</label>
+              {{ form.email }}
             </div>
             <button type="submit" class="stpn-btn">認証コードを送信</button>
-        </form>
+          </form>
+
+          <div class="stpn-divider">
+            <span>または</span>
+          </div>
+        </div>
+      </div>
+
+      <a href="{% url 'line_login_start' %}" class="stpn-method-btn stpn-method-btn-line">
+        LINEでログイン
+      </a>
+
+      <a href="javascript:void(0);" class="stpn-method-btn stpn-method-btn-google stpn-method-btn-disabled">
+        Googleでログイン
+      </a>
     </div>
+  </div>
 </div>
+
+<style>
+  .stpn-auth-wrap {
+    max-width: 420px;
+    margin: 48px auto;
+    padding: 0 16px;
+  }
+
+  .stpn-auth-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 34px 24px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  }
+
+  .stpn-auth-title {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: #111827;
+  }
+
+  .stpn-auth-subtitle {
+    font-size: 14px;
+    line-height: 1.8;
+    color: #6b7280;
+    margin-bottom: 22px;
+  }
+
+  .stpn-message {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .stpn-login-methods {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .stpn-method-block {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stpn-method-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s ease;
+    box-sizing: border-box;
+  }
+
+  .stpn-method-btn-mail {
+    background: #2563eb;
+    color: #ffffff;
+  }
+
+  .stpn-method-btn-mail:hover {
+    background: #1d4ed8;
+  }
+
+  .stpn-method-btn-line {
+    background: #06c755;
+    color: #ffffff;
+  }
+
+  .stpn-method-btn-line:hover {
+    background: #05b04b;
+  }
+
+  .stpn-method-btn-google {
+    background: #f3f4f6;
+    color: #6b7280;
+  }
+
+  .stpn-method-btn-disabled {
+    pointer-events: none;
+    opacity: 0.75;
+  }
+
+  .stpn-mail-form-area {
+    display: none;
+  }
+
+  .stpn-mail-form-area.is-open {
+    display: block;
+  }
+
+  .stpn-form-group {
+    margin-bottom: 14px;
+  }
+
+  .stpn-form-group label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+
+  .stpn-form-group input {
+    width: 100%;
+    height: 46px;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    padding: 0 12px;
+    font-size: 14px;
+    box-sizing: border-box;
+  }
+
+  .stpn-form-group input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  }
+
+  .stpn-btn {
+    width: 100%;
+    height: 48px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #38bdf8 0%, #2563eb 100%);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .stpn-btn:hover {
+    opacity: 0.95;
+  }
+
+  .stpn-divider {
+    position: relative;
+    text-align: center;
+    margin: 18px 0 4px;
+  }
+
+  .stpn-divider::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    border-top: 1px solid #e5e7eb;
+    transform: translateY(-50%);
+  }
+
+  .stpn-divider span {
+    position: relative;
+    display: inline-block;
+    padding: 0 12px;
+    background: #ffffff;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const toggleBtn = document.getElementById("mail-login-toggle");
+    const formArea = document.getElementById("mail-login-form-area");
+
+    toggleBtn.addEventListener("click", function () {
+      formArea.classList.toggle("is-open");
+    });
+  });
+</script>
 {% endblock %}

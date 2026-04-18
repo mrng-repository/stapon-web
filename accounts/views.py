@@ -1,10 +1,11 @@
-from django.shortcuts import render
-from django.urls import reverse
-
-# Create your views here.
 import random
+import secrets
 from datetime import timedelta
+from urllib.parse import urlencode
+
+import requests
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import login, logout
 from django.contrib import messages
@@ -260,3 +261,106 @@ def customer_dashboard_view(request):
 def customer_logout_view(request):
     logout_customer(request)
     return redirect('customer_login')
+
+def line_login_start(request):
+    state = secrets.token_urlsafe(32)
+    nonce = secrets.token_urlsafe(32)
+
+    request.session["line_login_state"] = state
+    request.session["line_login_nonce"] = nonce
+
+    params = {
+        "response_type": "code",
+        "client_id": settings.LINE_CHANNEL_ID,
+        "redirect_uri": settings.LINE_REDIRECT_URI,
+        "state": state,
+        "scope": "profile openid",
+        "nonce": nonce,
+    }
+
+    auth_url = "https://access.line.me/oauth2/v2.1/authorize?" + urlencode(params)
+    return redirect(auth_url)
+
+
+def line_login_callback(request):
+    error = request.GET.get("error")
+    if error:
+        messages.error(request, "LINEログインがキャンセルされたか、エラーが発生しました。")
+        return redirect("customer_login")
+
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    session_state = request.session.get("line_login_state")
+
+    if not code or not state or not session_state or state != session_state:
+        messages.error(request, "LINEログインの認証状態を確認できませんでした。")
+        return redirect("customer_login")
+
+    token_url = "https://api.line.me/oauth2/v2.1/token"
+    token_data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": settings.LINE_REDIRECT_URI,
+        "client_id": settings.LINE_CHANNEL_ID,
+        "client_secret": settings.LINE_CHANNEL_SECRET,
+    }
+
+    try:
+        token_response = requests.post(token_url, data=token_data, timeout=15)
+        token_response.raise_for_status()
+        token_json = token_response.json()
+    except requests.RequestException:
+        messages.error(request, "LINEとの通信に失敗しました。時間をおいて再度お試しください。")
+        return redirect("customer_login")
+
+    access_token = token_json.get("access_token")
+    if not access_token:
+        messages.error(request, "LINEアクセストークンの取得に失敗しました。")
+        return redirect("customer_login")
+
+    profile_url = "https://api.line.me/v2/profile"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+    }
+
+    try:
+        profile_response = requests.get(profile_url, headers=headers, timeout=15)
+        profile_response.raise_for_status()
+        profile_json = profile_response.json()
+    except requests.RequestException:
+        messages.error(request, "LINEプロフィールの取得に失敗しました。")
+        return redirect("customer_login")
+
+    line_user_id = profile_json.get("userId")
+    if not line_user_id:
+        messages.error(request, "LINEユーザー情報を取得できませんでした。")
+        return redirect("customer_login")
+
+    customer_user = CustomerUser.objects.filter(line_user_id=line_user_id).first()
+
+    if customer_user is None:
+        # 初回LINEログイン時は仮メールアドレスで顧客作成
+        temp_email = f"line_{line_user_id}@stapon.local"
+
+        customer_user, _ = CustomerUser.objects.get_or_create(
+            email=temp_email,
+            defaults={
+                "line_user_id": line_user_id,
+                "is_active": True,
+            }
+        )
+
+        if not customer_user.line_user_id:
+            customer_user.line_user_id = line_user_id
+            customer_user.save(update_fields=["line_user_id"])
+
+    login_customer(request, customer_user)
+
+    request.session.pop("line_login_state", None)
+    request.session.pop("line_login_nonce", None)
+
+    pending_stamp_token = request.session.pop("pending_stamp_token", None)
+    if pending_stamp_token:
+        return redirect(f"{reverse('customer_stamp_grant')}?token={pending_stamp_token}")
+
+    return redirect("customer_dashboard")
