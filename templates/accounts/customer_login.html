@@ -39,7 +39,7 @@
         LINEでログイン
       </a>
 
-      <a href="javascript:void(0);" class="stpn-method-btn stpn-method-btn-google stpn-method-btn-disabled">
+      <a href="{% url 'google_login_start' %}" class="stpn-method-btn stpn-method-btn-google">
         Googleでログイン
       </a>
     </div>
@@ -135,9 +135,10 @@
     color: #6b7280;
   }
 
-  .stpn-method-btn-disabled {
-    pointer-events: none;
-    opacity: 0.75;
+  .stpn-method-btn-google {
+    background: #ffffff;
+    color: #374151;
+    border: 1px solid #d1d5db;
   }
 
   .stpn-mail-form-area {
