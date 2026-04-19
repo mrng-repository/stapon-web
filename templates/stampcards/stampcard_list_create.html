@@ -3,7 +3,11 @@
 {% block title %}スタンプカード管理 | スタポン{% endblock %}
 
 {% block header %}
-    {% include "includes/app_header.html" with header_title="" back_url="/store/dashboard/" header_subtext=request.user.store_name logout_url="/store/logout/" %}
+    {% include "includes/app_header.html" with
+        header_subtext=request.user.email
+        header_logo_url="/store/dashboard/"
+        logout_url="/store/logout/"
+    %}
 {% endblock %}
 
 

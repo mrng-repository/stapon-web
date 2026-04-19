@@ -3,15 +3,11 @@
 {% block title %}スタンプカード編集 | スタポン{% endblock %}
 
 {% block header %}
-<header class="stpn-header">
-    <div class="stpn-header-inner">
-        <a href="{% url 'store_dashboard' %}" class="stpn-brand">スタポン</a>
-        <div class="stpn-header-right">
-            <span class="stpn-header-text">{{ request.user.store_name }}</span>
-            <a href="{% url 'store_logout' %}" class="stpn-header-btn">ログアウト</a>
-        </div>
-    </div>
-</header>
+    {% include "includes/app_header.html" with
+        header_subtext=request.user.email
+        header_logo_url="/store/dashboard/"
+        logout_url="/store/logout/"
+    %}
 {% endblock %}
 
 {% block content %}

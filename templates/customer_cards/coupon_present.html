@@ -2,6 +2,14 @@
 
 {% block title %}クーポン提示 | スタポン{% endblock %}
 
+{% block header %}
+    {% include "includes/app_header.html" with
+        header_subtext=customer_user.email
+        header_logo_url="/store/customer/dashboard/"
+        logout_url="/store/customer/logout/"
+    %}
+{% endblock %}
+
 {% block content %}
 <div class="stpn-page-wrap" style="max-width: 640px;">
     <div

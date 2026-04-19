@@ -3,7 +3,11 @@
 {% block title %}保有スタンプカード | スタポン{% endblock %}
 
 {% block header %}
-    {% include "includes/app_header.html" with header_title="保有スタンプカード" back_url="/store/customer/dashboard/" logout_url="/store/customer/logout/" %}
+    {% include "includes/app_header.html" with
+        header_subtext=customer_user.email
+        header_logo_url="/store/customer/dashboard/"
+        logout_url="/store/customer/logout/"
+    %}
 {% endblock %}
 
 {% block content %}

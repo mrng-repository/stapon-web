@@ -3,7 +3,11 @@
 {% block title %}店舗管理画面 | スタポン{% endblock %}
 
 {% block header %}
-    {% include "includes/app_header.html" with header_title="" header_subtext=request.user.store_name logout_url="/store/logout/" %}
+    {% include "includes/app_header.html" with
+        header_subtext=request.user.email
+        header_logo_url="/store/dashboard/"
+        logout_url="/store/logout/"
+    %}
 {% endblock %}
 
 {% block content %}
