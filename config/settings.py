@@ -149,12 +149,17 @@ CSRF_FAILURE_VIEW = "core.views.csrf_failure"
 
 CSRF_TRUSTED_ORIGINS = [
     "https://stapon.retail-system.shop",
+    "http://192.168.1.5:8000",
 ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+if DEBUG:
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+else:
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
 
 LINE_CHANNEL_ID = os.getenv("LINE_CHANNEL_ID")
 LINE_CHANNEL_SECRET = os.getenv("LINE_CHANNEL_SECRET")
@@ -168,4 +173,8 @@ GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.getenv(
     "GOOGLE_REDIRECT_URI",
     "https://stapon.retail-system.shop/store/auth/google/callback/"
+)
+STORE_GOOGLE_REDIRECT_URI = os.getenv(
+    "STORE_GOOGLE_REDIRECT_URI",
+    "https://stapon.retail-system.shop/store/auth/google/store/callback/"
 )

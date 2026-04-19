@@ -3,11 +3,7 @@
 {% block title %}スタンプカード削除 | スタポン{% endblock %}
 
 {% block header %}
-    {% include "includes/app_header.html" with
-        header_subtext=request.user.email
-        header_logo_url="/store/dashboard/"
-        logout_url="/store/logout/"
-    %}
+    {% include "includes/app_header.html" with header_subtext=request.user.email header_logo_url="/store/dashboard/" logout_url="/store/logout/" %}
 {% endblock %}
 
 {% block content %}

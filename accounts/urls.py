@@ -26,4 +26,6 @@ urlpatterns = [
     path("auth/line/callback/", views.line_login_callback, name="line_login_callback"),
     path("auth/google/login/", views.google_login_start, name="google_login_start"),
     path("auth/google/callback/", views.google_login_callback, name="google_login_callback"),
+    path("auth/google/store/login/", views.store_google_login_start, name="store_google_login_start"),
+    path("auth/google/store/callback/", views.store_google_login_callback, name="store_google_login_callback"),
 ]

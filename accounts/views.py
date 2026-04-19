@@ -476,3 +476,104 @@ def google_login_callback(request):
         return redirect(f"{reverse('customer_stamp_grant')}?token={pending_stamp_token}")
 
     return redirect("customer_dashboard")
+
+def store_google_login_start(request):
+    state = secrets.token_urlsafe(32)
+    request.session["store_google_login_state"] = state
+
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.STORE_GOOGLE_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "access_type": "online",
+        "prompt": "select_account",
+    }
+
+    auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+    return redirect(auth_url)
+
+
+def store_google_login_callback(request):
+    error = request.GET.get("error")
+    if error:
+        messages.error(request, "Googleログインがキャンセルされたか、エラーが発生しました。")
+        return redirect("store_login")
+
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    session_state = request.session.get("store_google_login_state")
+
+    if not code or not state or not session_state or state != session_state:
+        messages.error(request, "Googleログインの認証状態を確認できませんでした。")
+        return redirect("store_login")
+
+    token_url = "https://oauth2.googleapis.com/token"
+    token_data = {
+        "code": code,
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "redirect_uri": settings.STORE_GOOGLE_REDIRECT_URI,
+        "grant_type": "authorization_code",
+    }
+
+    try:
+        token_response = requests.post(token_url, data=token_data, timeout=15)
+        token_response.raise_for_status()
+        token_json = token_response.json()
+    except requests.RequestException:
+        messages.error(request, "Googleとの通信に失敗しました。時間をおいて再度お試しください。")
+        return redirect("store_login")
+
+    access_token = token_json.get("access_token")
+    if not access_token:
+        messages.error(request, "Googleアクセストークンの取得に失敗しました。")
+        return redirect("store_login")
+
+    userinfo_url = "https://openidconnect.googleapis.com/v1/userinfo"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+    }
+
+    try:
+        userinfo_response = requests.get(userinfo_url, headers=headers, timeout=15)
+        userinfo_response.raise_for_status()
+        userinfo = userinfo_response.json()
+    except requests.RequestException:
+        messages.error(request, "Googleユーザー情報の取得に失敗しました。")
+        return redirect("store_login")
+
+    google_sub = userinfo.get("sub")
+    email = userinfo.get("email")
+
+    if not google_sub:
+        messages.error(request, "Googleユーザー情報を取得できませんでした。")
+        return redirect("store_login")
+
+    google_key = f"google:{google_sub}"
+
+    # 1. 既にGoogle連携済みならそれでログイン
+    store_user = StoreUser.objects.filter(google_user_id=google_key).first()
+
+    # 2. 未連携なら、既存StoreUser.emailとGoogleメールの一致で連携
+    if store_user is None and email:
+        store_user = StoreUser.objects.filter(email=email).first()
+        if store_user:
+            # 別アカウントに同じgoogle_user_idが入る事故防止
+            if not store_user.google_user_id:
+                store_user.google_user_id = google_key
+                store_user.save(update_fields=["google_user_id"])
+            elif store_user.google_user_id != google_key:
+                messages.error(request, "このGoogleアカウントは別の店舗アカウントに連携されています。")
+                return redirect("store_login")
+
+    # 3. 一致しなければ新規作成せず停止
+    if store_user is None:
+        messages.error(request, "このGoogleアカウントは店舗アカウントに登録されていません。先に店舗登録を行ってください。")
+        return redirect("store_register")
+
+    login(request, store_user)
+    request.session.pop("store_google_login_state", None)
+
+    return redirect("store_dashboard")

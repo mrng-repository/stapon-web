@@ -24,9 +24,80 @@
             <button type="submit" class="stpn-btn">認証コードを送信</button>
         </form>
 
+        <div class="stpn-store-divider">
+            <span>または</span>
+        </div>
+
+        <a href="{% url 'store_google_login_start' %}" class="stpn-store-google-btn">
+            <span class="stpn-store-google-icon">G</span>
+            <span>Googleでログイン</span>
+        </a>
+
         <div class="stpn-link-wrap">
             <a href="{% url 'store_register' %}">新規アカウント作成はこちら</a>
         </div>
     </div>
 </div>
+<style>
+    .stpn-store-divider {
+        position: relative;
+        text-align: center;
+        margin: 18px 0 14px;
+    }
+
+    .stpn-store-divider::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        border-top: 1px solid #e5e7eb;
+        transform: translateY(-50%);
+    }
+
+    .stpn-store-divider span {
+        position: relative;
+        display: inline-block;
+        padding: 0 12px;
+        background: #ffffff;
+        color: #9ca3af;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .stpn-store-google-btn {
+        width: 100%;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #ffffff;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 700;
+        box-sizing: border-box;
+    }
+
+    .stpn-store-google-btn:hover {
+        background: #f9fafb;
+    }
+
+    .stpn-store-google-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        color: #4285F4;
+        font-weight: 800;
+        font-size: 16px;
+        line-height: 1;
+    }
+</style>
 {% endblock %}

@@ -48,16 +48,21 @@
 
 <style>
   .stpn-auth-wrap {
-    max-width: 420px;
-    margin: 48px auto;
-    padding: 0 16px;
+      min-height: calc(100vh - 0px);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 32px 16px 24px;
   }
 
   .stpn-auth-card {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 34px 24px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 420px;
+      background: var(--stpn-card-bg);
+      border-radius: var(--stpn-radius-lg);
+      box-shadow: var(--stpn-shadow);
+      padding: 24px 20px;
+      border: 1px solid var(--stpn-border);
   }
 
   .stpn-auth-title {
