@@ -33,6 +33,7 @@ class StoreUser(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     google_user_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    line_user_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
 
     objects = StoreUserManager()
 

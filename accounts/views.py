@@ -692,3 +692,164 @@ def store_google_register_callback(request):
     request.session.pop("pending_store_google_register_store_name", None)
 
     return redirect("store_dashboard")
+
+def _build_line_auth_url(redirect_uri, state):
+    params = {
+        "response_type": "code",
+        "client_id": settings.LINE_CHANNEL_ID,
+        "redirect_uri": redirect_uri,
+        "state": state,
+        "scope": "profile",
+    }
+    return "https://access.line.me/oauth2/v2.1/authorize?" + urlencode(params)
+
+
+def _fetch_line_profile(code, redirect_uri):
+    token_url = "https://api.line.me/oauth2/v2.1/token"
+    token_data = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": redirect_uri,
+        "client_id": settings.LINE_CHANNEL_ID,
+        "client_secret": settings.LINE_CHANNEL_SECRET,
+    }
+
+    token_response = requests.post(token_url, data=token_data, timeout=15)
+    token_response.raise_for_status()
+    token_json = token_response.json()
+
+    access_token = token_json.get("access_token")
+    if not access_token:
+        raise ValueError("LINEアクセストークンを取得できませんでした。")
+
+    profile_response = requests.get(
+        "https://api.line.me/v2/profile",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=15,
+    )
+    profile_response.raise_for_status()
+    return profile_response.json()
+
+
+def store_line_login_start(request):
+    state = secrets.token_urlsafe(32)
+    request.session["store_line_login_state"] = state
+
+    auth_url = _build_line_auth_url(settings.STORE_LINE_REDIRECT_URI, state)
+    return redirect(auth_url)
+
+
+def store_line_login_callback(request):
+    error = request.GET.get("error")
+    if error:
+        messages.error(request, "LINEログインがキャンセルされたか、エラーが発生しました。")
+        return redirect("store_login")
+
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    session_state = request.session.get("store_line_login_state")
+
+    if not code or not state or not session_state or state != session_state:
+        messages.error(request, "LINEログインの認証状態を確認できませんでした。")
+        return redirect("store_login")
+
+    try:
+        profile = _fetch_line_profile(code, settings.STORE_LINE_REDIRECT_URI)
+    except (requests.RequestException, ValueError):
+        messages.error(request, "LINEとの通信に失敗しました。時間をおいて再度お試しください。")
+        return redirect("store_login")
+
+    line_user_id = profile.get("userId")
+    if not line_user_id:
+        messages.error(request, "LINEユーザー情報を取得できませんでした。")
+        return redirect("store_login")
+
+    store_user = StoreUser.objects.filter(line_user_id=line_user_id).first()
+
+    request.session.pop("store_line_login_state", None)
+
+    if not store_user:
+        messages.error(request, "このLINEアカウントは店舗アカウントに登録されていません。新規アカウント作成をしてください。")
+        return redirect("store_register")
+
+    login(request, store_user)
+    return redirect("store_dashboard")
+
+
+def store_line_register_start(request):
+    if request.method != "POST":
+        return redirect("store_register")
+
+    form = StoreRegisterForm(request.POST)
+    if not form.is_valid():
+        return render(request, "accounts/store_register.html", {"form": form})
+
+    store_name = form.cleaned_data["store_name"]
+    email = form.cleaned_data["email"]
+
+    if StoreUser.objects.filter(email=email).exists():
+        messages.error(request, "このメールアドレスはすでに登録されています。ログインしてください。")
+        return redirect("store_login")
+
+    state = secrets.token_urlsafe(32)
+    request.session["store_line_register_state"] = state
+    request.session["pending_store_line_register_store_name"] = store_name
+    request.session["pending_store_line_register_email"] = email
+
+    auth_url = _build_line_auth_url(settings.STORE_LINE_REGISTER_REDIRECT_URI, state)
+    return redirect(auth_url)
+
+
+def store_line_register_callback(request):
+    error = request.GET.get("error")
+    if error:
+        messages.error(request, "LINE認証がキャンセルされたか、エラーが発生しました。")
+        return redirect("store_register")
+
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    session_state = request.session.get("store_line_register_state")
+
+    store_name = request.session.get("pending_store_line_register_store_name")
+    email = request.session.get("pending_store_line_register_email")
+
+    if not code or not state or not session_state or state != session_state:
+        messages.error(request, "LINE認証の状態を確認できませんでした。")
+        return redirect("store_register")
+
+    if not store_name or not email:
+        messages.error(request, "店舗名とメールアドレスの入力からやり直してください。")
+        return redirect("store_register")
+
+    try:
+        profile = _fetch_line_profile(code, settings.STORE_LINE_REGISTER_REDIRECT_URI)
+    except (requests.RequestException, ValueError):
+        messages.error(request, "LINEとの通信に失敗しました。時間をおいて再度お試しください。")
+        return redirect("store_register")
+
+    line_user_id = profile.get("userId")
+    if not line_user_id:
+        messages.error(request, "LINEユーザー情報を取得できませんでした。")
+        return redirect("store_register")
+
+    if StoreUser.objects.filter(line_user_id=line_user_id).exists():
+        messages.error(request, "このLINEアカウントは既に店舗アカウントに登録されています。ログインしてください。")
+        return redirect("store_login")
+
+    if StoreUser.objects.filter(email=email).exists():
+        messages.error(request, "このメールアドレスは既に登録されています。ログインしてください。")
+        return redirect("store_login")
+
+    user = StoreUser.objects.create_user(
+        email=email,
+        store_name=store_name,
+    )
+    user.line_user_id = line_user_id
+    user.save(update_fields=["line_user_id"])
+
+    request.session.pop("store_line_register_state", None)
+    request.session.pop("pending_store_line_register_store_name", None)
+    request.session.pop("pending_store_line_register_email", None)
+
+    login(request, user)
+    return redirect("store_dashboard")

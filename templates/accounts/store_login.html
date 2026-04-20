@@ -28,10 +28,17 @@
             <span>または</span>
         </div>
 
-        <a href="{% url 'store_google_login_start' %}" class="stpn-store-google-btn">
-            <span class="stpn-store-google-icon">G</span>
-            <span>Googleでログイン</span>
-        </a>
+        <div class="stpn-store-socials">
+            <a href="{% url 'store_line_login_start' %}" class="stpn-store-line-btn">
+                <span class="stpn-store-line-icon">LINE</span>
+                <span>LINEでログイン</span>
+            </a>
+
+            <a href="{% url 'store_google_login_start' %}" class="stpn-store-google-btn">
+                <span class="stpn-store-google-icon">G</span>
+                <span>Googleでログイン</span>
+            </a>
+        </div>
 
         <div class="stpn-link-wrap">
             <a href="{% url 'store_register' %}">新規アカウント作成はこちら</a>
@@ -97,6 +104,49 @@
         color: #4285F4;
         font-weight: 800;
         font-size: 16px;
+        line-height: 1;
+    }
+
+    .stpn-store-socials {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 18px;
+    }
+
+    .stpn-store-line-btn {
+        width: 100%;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #06c755;
+        color: #ffffff;
+        border: 1px solid #06c755;
+        border-radius: 12px;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 700;
+        box-sizing: border-box;
+    }
+
+    .stpn-store-line-btn:hover {
+        background: #05b04b;
+    }
+
+    .stpn-store-line-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 44px;
+        height: 24px;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 800;
         line-height: 1;
     }
 </style>
