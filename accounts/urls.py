@@ -28,4 +28,6 @@ urlpatterns = [
     path("auth/google/callback/", views.google_login_callback, name="google_login_callback"),
     path("auth/google/store/login/", views.store_google_login_start, name="store_google_login_start"),
     path("auth/google/store/callback/", views.store_google_login_callback, name="store_google_login_callback"),
+    path("auth/google/store/register/", views.store_google_register_start, name="store_google_register_start"),
+    path("auth/google/store/register/callback/", views.store_google_register_callback, name="store_google_register_callback"),
 ]

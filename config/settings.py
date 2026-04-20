@@ -178,3 +178,8 @@ STORE_GOOGLE_REDIRECT_URI = os.getenv(
     "STORE_GOOGLE_REDIRECT_URI",
     "https://stapon.retail-system.shop/store/auth/google/store/callback/"
 )
+
+STORE_GOOGLE_REGISTER_REDIRECT_URI = os.getenv(
+    "STORE_GOOGLE_REGISTER_REDIRECT_URI",
+    "https://stapon.retail-system.shop/store/auth/google/store/register/callback/"
+)

@@ -29,9 +29,119 @@
             <button type="submit" class="stpn-btn">認証コードを送信</button>
         </form>
 
+        <div class="stpn-store-divider">
+            <span>または</span>
+        </div>
+
+        <button type="button" id="store-google-register-btn" class="stpn-store-google-btn">
+            <span class="stpn-store-google-icon">G</span>
+            <span>Googleで新規作成</span>
+        </button>
+
+        <form id="store-google-register-form" method="post" action="{% url 'store_google_register_start' %}" style="display:none;">
+            {% csrf_token %}
+            <input type="hidden" name="store_name" id="store-google-store-name">
+        </form>
+
         <div class="stpn-link-wrap">
             <a href="{% url 'store_login' %}">ログインはこちら</a>
         </div>
     </div>
 </div>
+
+<style>
+    .stpn-store-divider {
+        position: relative;
+        text-align: center;
+        margin: 18px 0 14px;
+    }
+
+    .stpn-store-divider::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        border-top: 1px solid #e5e7eb;
+        transform: translateY(-50%);
+    }
+
+    .stpn-store-divider span {
+        position: relative;
+        display: inline-block;
+        padding: 0 12px;
+        background: #ffffff;
+        color: #9ca3af;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .stpn-store-google-btn {
+        width: 100%;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: #ffffff;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        font-size: 15px;
+        font-weight: 700;
+        box-sizing: border-box;
+        cursor: pointer;
+        margin-bottom: 18px;
+    }
+
+    .stpn-store-google-btn:hover {
+        background: #f9fafb;
+    }
+
+    .stpn-store-google-icon {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff;
+        color: #4285F4;
+        font-weight: 800;
+        font-size: 16px;
+        line-height: 1;
+        border: 1px solid #e5e7eb;
+    }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const googleBtn = document.getElementById("store-google-register-btn");
+    const storeNameInput = document.getElementById("{{ form.store_name.id_for_label }}");
+    const hiddenStoreName = document.getElementById("store-google-store-name");
+    const hiddenForm = document.getElementById("store-google-register-form");
+
+    if (!googleBtn || !storeNameInput || !hiddenStoreName || !hiddenForm) {
+        return;
+    }
+
+    googleBtn.addEventListener("click", function () {
+        const storeName = storeNameInput.value.trim();
+
+        if (!storeName) {
+            storeNameInput.focus();
+
+            if (typeof storeNameInput.reportValidity === "function") {
+                storeNameInput.reportValidity();
+            } else {
+                alert("店舗名を入力してください。");
+            }
+            return;
+        }
+
+        hiddenStoreName.value = storeName;
+        hiddenForm.submit();
+    });
+});
+</script>
 {% endblock %}

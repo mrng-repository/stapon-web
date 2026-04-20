@@ -577,3 +577,118 @@ def store_google_login_callback(request):
     request.session.pop("store_google_login_state", None)
 
     return redirect("store_dashboard")
+
+def store_google_register_start(request):
+    if request.method != "POST":
+        return redirect("store_register")
+
+    store_name = request.POST.get("store_name", "").strip()
+
+    if not store_name:
+        messages.error(request, "店舗名を入力してください。")
+        return redirect("store_register")
+
+    state = secrets.token_urlsafe(32)
+    request.session["store_google_register_state"] = state
+    request.session["pending_store_google_register_store_name"] = store_name
+
+    params = {
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "redirect_uri": settings.STORE_GOOGLE_REGISTER_REDIRECT_URI,
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "access_type": "online",
+        "prompt": "select_account",
+    }
+
+    auth_url = "https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params)
+    return redirect(auth_url)
+
+
+def store_google_register_callback(request):
+    error = request.GET.get("error")
+    if error:
+        messages.error(request, "Google認証がキャンセルされたか、エラーが発生しました。")
+        return redirect("store_register")
+
+    code = request.GET.get("code")
+    state = request.GET.get("state")
+    session_state = request.session.get("store_google_register_state")
+    store_name = request.session.get("pending_store_google_register_store_name")
+
+    if not code or not state or not session_state or state != session_state:
+        messages.error(request, "Google認証の状態を確認できませんでした。")
+        return redirect("store_register")
+
+    if not store_name:
+        messages.error(request, "店舗名の入力からやり直してください。")
+        return redirect("store_register")
+
+    token_url = "https://oauth2.googleapis.com/token"
+    token_data = {
+        "code": code,
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "redirect_uri": settings.STORE_GOOGLE_REGISTER_REDIRECT_URI,
+        "grant_type": "authorization_code",
+    }
+
+    try:
+        token_response = requests.post(token_url, data=token_data, timeout=15)
+        token_response.raise_for_status()
+        token_json = token_response.json()
+    except requests.RequestException:
+        messages.error(request, "Googleとの通信に失敗しました。時間をおいて再度お試しください。")
+        return redirect("store_register")
+
+    access_token = token_json.get("access_token")
+    if not access_token:
+        messages.error(request, "Googleアクセストークンの取得に失敗しました。")
+        return redirect("store_register")
+
+    userinfo_url = "https://openidconnect.googleapis.com/v1/userinfo"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+    }
+
+    try:
+        userinfo_response = requests.get(userinfo_url, headers=headers, timeout=15)
+        userinfo_response.raise_for_status()
+        userinfo = userinfo_response.json()
+    except requests.RequestException:
+        messages.error(request, "Googleユーザー情報の取得に失敗しました。")
+        return redirect("store_register")
+
+    google_sub = userinfo.get("sub")
+    email = userinfo.get("email")
+
+    if not google_sub or not email:
+        messages.error(request, "Googleアカウントのメール情報を取得できませんでした。")
+        return redirect("store_register")
+
+    google_key = f"google:{google_sub}"
+
+    # すでにGoogle連携済みなら新規作成しない
+    if StoreUser.objects.filter(google_user_id=google_key).exists():
+        messages.error(request, "このGoogleアカウントは既に店舗アカウントに登録されています。ログインしてください。")
+        return redirect("store_login")
+
+    # メールアドレスが既存なら新規作成しない
+    if StoreUser.objects.filter(email=email).exists():
+        messages.error(request, "このGoogleメールアドレスは既に登録されています。ログインしてください。")
+        return redirect("store_login")
+
+    user = StoreUser.objects.create_user(
+        email=email,
+        store_name=store_name,
+    )
+    user.google_user_id = google_key
+    user.save(update_fields=["google_user_id"])
+
+    login(request, user)
+
+    request.session.pop("store_google_register_state", None)
+    request.session.pop("pending_store_google_register_store_name", None)
+
+    return redirect("store_dashboard")
