@@ -71,6 +71,7 @@ class CustomerUser(models.Model):
     email = models.EmailField(unique=True)
     line_user_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
     google_user_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+    display_name = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 

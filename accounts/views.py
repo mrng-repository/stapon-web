@@ -32,6 +32,13 @@ def _make_temp_email(prefix, social_user_id):
 def generate_otp():
     return str(random.randint(100000, 999999))
 
+def _make_temp_email(prefix, social_user_id):
+    return f"{prefix}_{social_user_id}@stapon.local"
+
+
+def _is_temp_email(email):
+    return bool(email and email.endswith("@stapon.local"))
+
 
 def store_login_view(request):
     if request.method == 'POST':
@@ -161,7 +168,16 @@ def store_dashboard_view(request):
     if not request.user.is_authenticated:
         return redirect('store_login')
 
-    return render(request, 'accounts/store_dashboard.html')
+    account_email = None if _is_temp_email(request.user.email) else request.user.email
+
+    return render(
+        request,
+        'accounts/store_dashboard.html',
+        {
+            'page_subtext': request.user.store_name,
+            'account_email': account_email,
+        }
+    )
 
 def store_logout_view(request):
     logout(request)
@@ -253,12 +269,21 @@ def customer_dashboard_view(request):
         status='available'
     ).count()
 
+    if request.customer_user.display_name:
+        page_subtext = request.customer_user.display_name
+    else:
+        page_subtext = request.customer_user.email
+
+    account_email = None if _is_temp_email(request.customer_user.email) else request.customer_user.email
+
     return render(
         request,
         'accounts/customer_dashboard.html',
         {
             'customer_user': request.customer_user,
             'available_coupon_count': available_coupon_count,
+            'page_subtext': page_subtext,
+            'account_email': account_email,
         }
     )
 
@@ -336,6 +361,8 @@ def line_login_callback(request):
         return redirect("customer_login")
 
     line_user_id = profile_json.get("userId")
+    line_display_name = profile_json.get("displayName", "")
+
     if not line_user_id:
         messages.error(request, "LINEユーザー情報を取得できませんでした。")
         return redirect("customer_login")
@@ -343,20 +370,25 @@ def line_login_callback(request):
     customer_user = CustomerUser.objects.filter(line_user_id=line_user_id).first()
 
     if customer_user is None:
-        # 初回LINEログイン時は仮メールアドレスで顧客作成
-        temp_email = f"line_{line_user_id}@stapon.local"
-
+        temp_email = _make_temp_email("line", line_user_id)
         customer_user, _ = CustomerUser.objects.get_or_create(
             email=temp_email,
             defaults={
                 "line_user_id": line_user_id,
+                "display_name": line_display_name,
                 "is_active": True,
             }
         )
-
+    else:
+        update_fields = []
+        if not customer_user.display_name and line_display_name:
+            customer_user.display_name = line_display_name
+            update_fields.append("display_name")
         if not customer_user.line_user_id:
             customer_user.line_user_id = line_user_id
-            customer_user.save(update_fields=["line_user_id"])
+            update_fields.append("line_user_id")
+        if update_fields:
+            customer_user.save(update_fields=update_fields)
 
     login_customer(request, customer_user)
 
@@ -805,7 +837,6 @@ def store_line_register_callback(request):
     code = request.GET.get("code")
     state = request.GET.get("state")
     session_state = request.session.get("store_line_register_state")
-
     store_name = request.session.get("pending_store_line_register_store_name")
 
     if not code or not state or not session_state or state != session_state:
@@ -832,10 +863,6 @@ def store_line_register_callback(request):
         return redirect("store_login")
 
     temp_email = _make_temp_email("store_line", line_user_id)
-
-    if StoreUser.objects.filter(email=temp_email).exists():
-        messages.error(request, "このLINEアカウントは既に店舗アカウントに登録されています。ログインしてください。")
-        return redirect("store_login")
 
     user = StoreUser.objects.create_user(
         email=temp_email,

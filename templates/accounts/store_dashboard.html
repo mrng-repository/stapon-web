@@ -3,13 +3,14 @@
 {% block title %}店舗管理画面 | スタポン{% endblock %}
 
 {% block header %}
-    {% include "includes/app_header.html" with header_subtext=request.user.email header_logo_url="/store/dashboard/" logout_url="/store/logout/" %}
+    {% include "includes/app_header.html" with header_logo_url="/store/dashboard/" logout_url="/store/logout/" %}
 {% endblock %}
 
 {% block content %}
 <div class="stpn-page-wrap">
     <div class="stpn-page-head">
         <h1 class="stpn-page-title">店舗管理画面</h1>
+        <p class="stpn-page-subtext">{{ page_subtext }}</p>
         <p class="stpn-page-subtext">
             スタンプカードやクーポンの設定をここから行います。
         </p>

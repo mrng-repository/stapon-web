@@ -3,14 +3,14 @@
 {% block title %}顧客ダッシュボード | スタポン{% endblock %}
 
 {% block header %}
-    {% include "includes/app_header.html" with header_subtext=customer_user.email header_logo_url="/store/customer/dashboard/" logout_url="/store/customer/logout/" %}
+    {% include "includes/app_header.html" with header_logo_url="/store/customer/dashboard/" logout_url="/store/customer/logout/" %}
 {% endblock %}
 
 {% block content %}
 <div class="stpn-page-wrap">
     <div class="stpn-page-head">
         <h1 class="stpn-page-title">顧客ダッシュボード</h1>
-        <p class="stpn-page-subtext">{{ customer_user.email }}</p>
+        <p class="stpn-page-subtext">{{ page_subtext }}</p>
     </div>
 
     <div class="stpn-grid">
@@ -39,7 +39,11 @@
         <div class="stpn-card">
             <span class="stpn-badge">ACCOUNT</span>
             <h2 class="stpn-card-title">アカウント</h2>
-            <p class="stpn-card-text">メールアドレス: {{ customer_user.email }}</p>
+            {% if account_email %}
+                <p class="stpn-card-text">メールアドレス: {{ account_email }}</p>
+            {% else %}
+                <p class="stpn-card-text">メールアドレス: 未登録</p>
+            {% endif %}
         </div>
     </div>
 </div>
