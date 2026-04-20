@@ -48,7 +48,6 @@
         <form id="store-line-register-form" method="post" action="{% url 'store_line_register_start' %}" style="display:none;">
             {% csrf_token %}
             <input type="hidden" name="store_name" id="store-line-store-name">
-            <input type="hidden" name="email" id="store-line-email">
         </form>
 
         <form id="store-google-register-form" method="post" action="{% url 'store_google_register_start' %}" style="display:none;">
@@ -173,20 +172,17 @@
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const storeNameInput = document.getElementById("{{ form.store_name.id_for_label }}");
-    const emailInput = document.getElementById("{{ form.email.id_for_label }}");
 
     const lineBtn = document.getElementById("store-line-register-btn");
     const lineForm = document.getElementById("store-line-register-form");
     const lineStoreName = document.getElementById("store-line-store-name");
-    const lineEmail = document.getElementById("store-line-email");
 
     const googleBtn = document.getElementById("store-google-register-btn");
     const googleForm = document.getElementById("store-google-register-form");
     const googleStoreName = document.getElementById("store-google-store-name");
 
-    function validateStoreBase() {
+    function validateStoreName() {
         const storeName = storeNameInput ? storeNameInput.value.trim() : "";
-        const email = emailInput ? emailInput.value.trim() : "";
 
         if (!storeName) {
             storeNameInput.focus();
@@ -198,36 +194,25 @@ document.addEventListener("DOMContentLoaded", function () {
             return null;
         }
 
-        return { storeName, email };
+        return storeName;
     }
 
-    if (lineBtn && lineForm && lineStoreName && lineEmail) {
+    if (lineBtn && lineForm && lineStoreName) {
         lineBtn.addEventListener("click", function () {
-            const values = validateStoreBase();
-            if (!values) return;
+            const storeName = validateStoreName();
+            if (!storeName) return;
 
-            if (!values.email) {
-                emailInput.focus();
-                if (typeof emailInput.reportValidity === "function") {
-                    emailInput.reportValidity();
-                } else {
-                    alert("メールアドレスを入力してください。");
-                }
-                return;
-            }
-
-            lineStoreName.value = values.storeName;
-            lineEmail.value = values.email;
+            lineStoreName.value = storeName;
             lineForm.submit();
         });
     }
 
     if (googleBtn && googleForm && googleStoreName) {
         googleBtn.addEventListener("click", function () {
-            const values = validateStoreBase();
-            if (!values) return;
+            const storeName = validateStoreName();
+            if (!storeName) return;
 
-            googleStoreName.value = values.storeName;
+            googleStoreName.value = storeName;
             googleForm.submit();
         });
     }

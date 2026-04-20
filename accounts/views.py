@@ -26,6 +26,9 @@ from .authentication import login_customer, logout_customer
 from .decorators import customer_login_required
 
 
+def _make_temp_email(prefix, social_user_id):
+    return f"{prefix}_{social_user_id}@stapon.local"
+
 def generate_otp():
     return str(random.randint(100000, 999999))
 
@@ -440,29 +443,28 @@ def google_login_callback(request):
         messages.error(request, "Googleユーザー情報を取得できませんでした。")
         return redirect("customer_login")
 
-    # 既存仕様に合わせて、line_user_id をGoogle識別子保管にも流用する最小構成
     google_key = f"google:{google_sub}"
 
-    customer_user = CustomerUser.objects.filter(line_user_id=google_key).first()
+    customer_user = CustomerUser.objects.filter(google_user_id=google_key).first()
 
     if customer_user is None:
         if email:
             customer_user, _ = CustomerUser.objects.get_or_create(
                 email=email,
                 defaults={
-                    "line_user_id": google_key,
+                    "google_user_id": google_key,
                     "is_active": True,
                 }
             )
-            if not customer_user.line_user_id:
-                customer_user.line_user_id = google_key
-                customer_user.save(update_fields=["line_user_id"])
+            if not customer_user.google_user_id:
+                customer_user.google_user_id = google_key
+                customer_user.save(update_fields=["google_user_id"])
         else:
-            temp_email = f"google_{google_sub}@stapon.local"
+            temp_email = _make_temp_email("google", google_sub)
             customer_user, _ = CustomerUser.objects.get_or_create(
                 email=temp_email,
                 defaults={
-                    "line_user_id": google_key,
+                    "google_user_id": google_key,
                     "is_active": True,
                 }
             )
@@ -780,21 +782,15 @@ def store_line_register_start(request):
     if request.method != "POST":
         return redirect("store_register")
 
-    form = StoreRegisterForm(request.POST)
-    if not form.is_valid():
-        return render(request, "accounts/store_register.html", {"form": form})
+    store_name = request.POST.get("store_name", "").strip()
 
-    store_name = form.cleaned_data["store_name"]
-    email = form.cleaned_data["email"]
-
-    if StoreUser.objects.filter(email=email).exists():
-        messages.error(request, "このメールアドレスはすでに登録されています。ログインしてください。")
-        return redirect("store_login")
+    if not store_name:
+        messages.error(request, "店舗名を入力してください。")
+        return redirect("store_register")
 
     state = secrets.token_urlsafe(32)
     request.session["store_line_register_state"] = state
     request.session["pending_store_line_register_store_name"] = store_name
-    request.session["pending_store_line_register_email"] = email
 
     auth_url = _build_line_auth_url(settings.STORE_LINE_REGISTER_REDIRECT_URI, state)
     return redirect(auth_url)
@@ -811,14 +807,13 @@ def store_line_register_callback(request):
     session_state = request.session.get("store_line_register_state")
 
     store_name = request.session.get("pending_store_line_register_store_name")
-    email = request.session.get("pending_store_line_register_email")
 
     if not code or not state or not session_state or state != session_state:
         messages.error(request, "LINE認証の状態を確認できませんでした。")
         return redirect("store_register")
 
-    if not store_name or not email:
-        messages.error(request, "店舗名とメールアドレスの入力からやり直してください。")
+    if not store_name:
+        messages.error(request, "店舗名の入力からやり直してください。")
         return redirect("store_register")
 
     try:
@@ -836,12 +831,14 @@ def store_line_register_callback(request):
         messages.error(request, "このLINEアカウントは既に店舗アカウントに登録されています。ログインしてください。")
         return redirect("store_login")
 
-    if StoreUser.objects.filter(email=email).exists():
-        messages.error(request, "このメールアドレスは既に登録されています。ログインしてください。")
+    temp_email = _make_temp_email("store_line", line_user_id)
+
+    if StoreUser.objects.filter(email=temp_email).exists():
+        messages.error(request, "このLINEアカウントは既に店舗アカウントに登録されています。ログインしてください。")
         return redirect("store_login")
 
     user = StoreUser.objects.create_user(
-        email=email,
+        email=temp_email,
         store_name=store_name,
     )
     user.line_user_id = line_user_id
@@ -849,7 +846,6 @@ def store_line_register_callback(request):
 
     request.session.pop("store_line_register_state", None)
     request.session.pop("pending_store_line_register_store_name", None)
-    request.session.pop("pending_store_line_register_email", None)
 
     login(request, user)
     return redirect("store_dashboard")
