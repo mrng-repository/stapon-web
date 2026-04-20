@@ -168,6 +168,16 @@ LINE_REDIRECT_URI = os.getenv(
     "https://stapon.retail-system.shop/store/auth/line/callback/"
 )
 
+STORE_LINE_REDIRECT_URI = os.getenv(
+    "STORE_LINE_REDIRECT_URI",
+    "https://stapon.retail-system.shop/store/auth/line/store/callback/"
+)
+
+STORE_LINE_REGISTER_REDIRECT_URI = os.getenv(
+    "STORE_LINE_REGISTER_REDIRECT_URI",
+    "https://stapon.retail-system.shop/store/auth/line/store/register/callback/"
+)
+
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
 GOOGLE_REDIRECT_URI = os.getenv(
