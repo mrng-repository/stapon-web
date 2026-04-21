@@ -39,4 +39,10 @@ urlpatterns = [
 
     path("auth/line/store/register/", views.store_line_register_start, name="store_line_register_start"),
     path("auth/line/store/register/callback/", views.store_line_register_callback, name="store_line_register_callback"),
+
+    path("customer/account/", views.customer_account_view, name="customer_account"),
+    path("customer/account/delete/", views.customer_delete_confirm_view, name="customer_delete_confirm"),
+
+    path("account/", views.store_account_view, name="store_account"),
+    path("account/delete/", views.store_delete_confirm_view, name="store_delete_confirm"),
 ]

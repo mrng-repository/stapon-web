@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}アカウント情報 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_logo_url="/store/customer/dashboard/" logout_url="/store/customer/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">アカウント情報</h1>
+        <p class="stpn-page-subtext">{{ page_subtext }}</p>
+    </div>
+
+    <div class="stpn-card">
+        <p class="stpn-card-text">ログイン方法: {{ login_method }}</p>
+
+        {% if account_email %}
+            <p class="stpn-card-text" style="margin-top:8px;">メールアドレス: {{ account_email }}</p>
+        {% else %}
+            <p class="stpn-card-text" style="margin-top:8px;">メールアドレス: 未登録</p>
+        {% endif %}
+    </div>
+
+    <div class="stpn-bottom-nav">
+        <a href="{% url 'customer_delete_confirm' %}" class="stpn-back-link" style="color:#dc2626;">
+            退会する
+        </a>
+    </div>
+</div>
+{% endblock %}

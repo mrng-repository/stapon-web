@@ -28,12 +28,15 @@ class StoreUserManager(BaseUserManager):
 
 class StoreUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
-    store_name = models.CharField(max_length=255)
+    store_name = models.CharField(max_length=255, unique=True) 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     google_user_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
     line_user_id = models.CharField(max_length=255, blank=True, null=True, unique=True)
+
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(blank=True, null=True)
 
     objects = StoreUserManager()
 
@@ -74,6 +77,9 @@ class CustomerUser(models.Model):
     display_name = models.CharField(max_length=255, blank=True, null=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.email

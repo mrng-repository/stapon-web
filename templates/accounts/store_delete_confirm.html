@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}退会確認 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_logo_url="/store/dashboard/" logout_url="/store/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-auth-wrap">
+    <div class="stpn-auth-card">
+        <h1 class="stpn-auth-title">退会確認</h1>
+        <p class="stpn-auth-subtitle">
+            退会すると、この店舗が発行したスタンプカード・クーポンはすべて利用できなくなります。<br>
+            店舗管理画面にもログインできなくなります。<br>
+            この操作は取り消せません。
+        </p>
+
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="stpn-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">
+                同意して退会する
+            </button>
+        </form>
+
+        <div class="stpn-link-wrap">
+            <a href="{% url 'store_account' %}">戻る</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

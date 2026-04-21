@@ -10,7 +10,7 @@
 <div class="stpn-page-wrap">
     <div class="stpn-page-head">
         <h1 class="stpn-page-title">顧客ダッシュボード</h1>
-        <p class="stpn-page-subtext">{{ page_subtext }}</p>
+        <p class="stpn-page-subtext">{{ page_subtext }} 様</p>
     </div>
 
     <div class="stpn-grid">
@@ -35,16 +35,13 @@
                 </p>
             {% endif %}
         </a>
-
-        <div class="stpn-card">
+        
+        <a href="{% url 'customer_account' %}" class="stpn-card stpn-card-link">
             <span class="stpn-badge">ACCOUNT</span>
             <h2 class="stpn-card-title">アカウント</h2>
-            {% if account_email %}
-                <p class="stpn-card-text">メールアドレス: {{ account_email }}</p>
-            {% else %}
-                <p class="stpn-card-text">メールアドレス: 未登録</p>
-            {% endif %}
-        </div>
+            <p class="stpn-card-text">登録情報や退会手続きはこちら</p>
+        </a>
+       
     </div>
 </div>
 {% endblock %}

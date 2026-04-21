@@ -4,7 +4,6 @@ import requests
 from datetime import timedelta
 from urllib.parse import urlencode
 
-import requests
 from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.utils import timezone
@@ -12,9 +11,10 @@ from django.contrib.auth import login, logout
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
+from django.db import transaction
 
 from .models import StoreUser, EmailOTP, CustomerUser, CustomerEmailOTP
-from stampcards.models import RewardCoupon
+from stampcards.models import StampCard, CustomerStampCard, StampGrantLog, RewardCoupon
 from .forms import (
     StoreLoginForm,
     StoreRegisterForm,
@@ -29,15 +29,144 @@ from .decorators import customer_login_required
 def _make_temp_email(prefix, social_user_id):
     return f"{prefix}_{social_user_id}@stapon.local"
 
+
 def generate_otp():
     return str(random.randint(100000, 999999))
-
-def _make_temp_email(prefix, social_user_id):
-    return f"{prefix}_{social_user_id}@stapon.local"
 
 
 def _is_temp_email(email):
     return bool(email and email.endswith("@stapon.local"))
+
+
+def _customer_login_method(customer_user):
+    if getattr(customer_user, "line_user_id", None):
+        return "LINE"
+    if getattr(customer_user, "google_user_id", None):
+        return "Google"
+    return "メール"
+
+
+def _store_login_method(store_user):
+    if getattr(store_user, "line_user_id", None):
+        return "LINE"
+    if getattr(store_user, "google_user_id", None):
+        return "Google"
+    return "メール"
+
+
+def _restore_customer_user(customer_user, *, email=None, google_user_id=None, line_user_id=None, display_name=None):
+    update_fields = []
+
+    if email and customer_user.email != email:
+        customer_user.email = email
+        update_fields.append("email")
+
+    if google_user_id and customer_user.google_user_id != google_user_id:
+        customer_user.google_user_id = google_user_id
+        update_fields.append("google_user_id")
+
+    if line_user_id and customer_user.line_user_id != line_user_id:
+        customer_user.line_user_id = line_user_id
+        update_fields.append("line_user_id")
+
+    if display_name is not None and customer_user.display_name != display_name:
+        customer_user.display_name = display_name
+        update_fields.append("display_name")
+
+    if customer_user.is_deleted:
+        customer_user.is_deleted = False
+        update_fields.append("is_deleted")
+
+    if customer_user.deleted_at is not None:
+        customer_user.deleted_at = None
+        update_fields.append("deleted_at")
+
+    if not customer_user.is_active:
+        customer_user.is_active = True
+        update_fields.append("is_active")
+
+    if update_fields:
+        customer_user.save(update_fields=update_fields)
+
+    return customer_user
+
+
+def _restore_store_user(store_user, *, email=None, store_name=None, google_user_id=None, line_user_id=None):
+    update_fields = []
+
+    if email and store_user.email != email:
+        store_user.email = email
+        update_fields.append("email")
+
+    if store_name and store_user.store_name != store_name:
+        store_user.store_name = store_name
+        update_fields.append("store_name")
+
+    if google_user_id and store_user.google_user_id != google_user_id:
+        store_user.google_user_id = google_user_id
+        update_fields.append("google_user_id")
+
+    if line_user_id and store_user.line_user_id != line_user_id:
+        store_user.line_user_id = line_user_id
+        update_fields.append("line_user_id")
+
+    if store_user.is_deleted:
+        store_user.is_deleted = False
+        update_fields.append("is_deleted")
+
+    if store_user.deleted_at is not None:
+        store_user.deleted_at = None
+        update_fields.append("deleted_at")
+
+    if not store_user.is_active:
+        store_user.is_active = True
+        update_fields.append("is_active")
+
+    if update_fields:
+        store_user.save(update_fields=update_fields)
+
+    return store_user
+
+
+@customer_login_required
+def customer_account_view(request):
+    customer_user = request.customer_user
+
+    page_subtext = customer_user.display_name or customer_user.email
+    account_email = None if _is_temp_email(customer_user.email) else customer_user.email
+    login_method = _customer_login_method(customer_user)
+
+    return render(
+        request,
+        "accounts/customer_account.html",
+        {
+            "customer_user": customer_user,
+            "page_subtext": page_subtext,
+            "account_email": account_email,
+            "login_method": login_method,
+        }
+    )
+
+
+def store_account_view(request):
+    if not request.user.is_authenticated:
+        return redirect("store_login")
+
+    store_user = request.user
+    page_subtext = store_user.store_name
+    account_email = None if _is_temp_email(store_user.email) else store_user.email
+    login_method = _store_login_method(store_user)
+
+    return render(
+        request,
+        "accounts/store_account.html",
+        {
+            "store_user": store_user,
+            "page_subtext": page_subtext,
+            "account_email": account_email,
+            "login_method": login_method,
+        }
+    )
 
 
 def store_login_view(request):
@@ -46,7 +175,8 @@ def store_login_view(request):
         if form.is_valid():
             email = form.cleaned_data['email']
 
-            if not StoreUser.objects.filter(email=email).exists():
+            store_user = StoreUser.objects.filter(email=email).first()
+            if not store_user:
                 messages.error(request, 'このメールアドレスは登録されていません。')
                 return redirect('store_register')
 
@@ -79,12 +209,19 @@ def store_register_view(request):
     if request.method == 'POST':
         form = StoreRegisterForm(request.POST)
         if form.is_valid():
-            store_name = form.cleaned_data['store_name']
+            store_name = form.cleaned_data['store_name'].strip()
             email = form.cleaned_data['email']
 
-            if StoreUser.objects.filter(email=email).exists():
+            existing_by_email = StoreUser.objects.filter(email=email).first()
+            existing_by_store_name = StoreUser.objects.filter(store_name=store_name).first()
+
+            if existing_by_email and not existing_by_email.is_deleted:
                 messages.error(request, 'このメールアドレスはすでに登録されています。')
                 return redirect('store_login')
+
+            if existing_by_store_name and not existing_by_store_name.is_deleted and existing_by_store_name.email != email:
+                messages.error(request, 'この店舗名はすでに使用されています。')
+                return redirect('store_register')
 
             otp = generate_otp()
             EmailOTP.objects.create(
@@ -140,16 +277,53 @@ def otp_verify_view(request):
                 return redirect('store_login')
 
             otp_record.is_used = True
-            otp_record.save()
+            otp_record.save(update_fields=['is_used'])
 
             if purpose == 'register':
                 store_name = request.session.get('store_name')
-                user = StoreUser.objects.create_user(
-                    email=email,
-                    store_name=store_name
-                )
+
+                with transaction.atomic():
+                    user = StoreUser.objects.filter(email=email).first()
+
+                    if user:
+                        if not user.is_deleted:
+                            messages.error(request, 'このメールアドレスはすでに登録されています。')
+                            return redirect('store_login')
+
+                        duplicate_store = StoreUser.objects.filter(
+                            store_name=store_name,
+                            is_deleted=False
+                        ).exclude(pk=user.pk).exists()
+                        if duplicate_store:
+                            messages.error(request, 'この店舗名はすでに使用されています。')
+                            return redirect('store_register')
+
+                        user = _restore_store_user(
+                            user,
+                            email=email,
+                            store_name=store_name,
+                        )
+                    else:
+                        if StoreUser.objects.filter(store_name=store_name, is_deleted=False).exists():
+                            messages.error(request, 'この店舗名はすでに使用されています。')
+                            return redirect('store_register')
+
+                        user = StoreUser.objects.create_user(
+                            email=email,
+                            store_name=store_name
+                        )
             else:
-                user = StoreUser.objects.get(email=email)
+                user = StoreUser.objects.filter(email=email).first()
+                if not user:
+                    messages.error(request, 'アカウントが見つかりません。')
+                    return redirect('store_login')
+
+                if user.is_deleted:
+                    messages.error(request, '退会済みアカウントです。新規登録画面から再登録してください。')
+                    request.session.pop('otp_email', None)
+                    request.session.pop('otp_purpose', None)
+                    request.session.pop('store_name', None)
+                    return redirect('store_register')
 
             login(request, user)
 
@@ -179,9 +353,11 @@ def store_dashboard_view(request):
         }
     )
 
+
 def store_logout_view(request):
     logout(request)
     return redirect('store_login')
+
 
 def customer_login_view(request):
     if request.method == 'POST':
@@ -196,7 +372,6 @@ def customer_login_view(request):
                 expires_at=timezone.now() + timedelta(minutes=5)
             )
 
-            # ここを変更
             send_mail(
                 '認証コード',
                 f'あなたの認証コードは {otp_code} です。',
@@ -211,6 +386,7 @@ def customer_login_view(request):
         form = CustomerEmailForm()
 
     return render(request, 'accounts/customer_login.html', {'form': form})
+
 
 def customer_otp_verify_view(request):
     email = request.session.get('customer_email')
@@ -238,9 +414,19 @@ def customer_otp_verify_view(request):
                 return redirect('customer_login')
 
             otp.is_used = True
-            otp.save()
+            otp.save(update_fields=['is_used'])
 
-            customer_user, created = CustomerUser.objects.get_or_create(email=email)
+            customer_user = CustomerUser.objects.filter(email=email).first()
+
+            if customer_user:
+                if customer_user.is_deleted:
+                    customer_user = _restore_customer_user(customer_user, email=email)
+            else:
+                customer_user = CustomerUser.objects.create(
+                    email=email,
+                    is_active=True,
+                )
+
             login_customer(request, customer_user)
 
             request.session.pop('customer_email', None)
@@ -261,6 +447,7 @@ def customer_otp_verify_view(request):
             'email': email,
         }
     )
+
 
 @customer_login_required
 def customer_dashboard_view(request):
@@ -287,9 +474,11 @@ def customer_dashboard_view(request):
         }
     )
 
+
 def customer_logout_view(request):
     logout_customer(request)
     return redirect('customer_login')
+
 
 def line_login_start(request):
     state = secrets.token_urlsafe(32)
@@ -371,24 +560,28 @@ def line_login_callback(request):
 
     if customer_user is None:
         temp_email = _make_temp_email("line", line_user_id)
-        customer_user, _ = CustomerUser.objects.get_or_create(
-            email=temp_email,
-            defaults={
-                "line_user_id": line_user_id,
-                "display_name": line_display_name,
-                "is_active": True,
-            }
-        )
+        customer_user = CustomerUser.objects.filter(email=temp_email).first()
+
+        if customer_user:
+            customer_user = _restore_customer_user(
+                customer_user,
+                email=temp_email,
+                line_user_id=line_user_id,
+                display_name=line_display_name,
+            )
+        else:
+            customer_user = CustomerUser.objects.create(
+                email=temp_email,
+                line_user_id=line_user_id,
+                display_name=line_display_name,
+                is_active=True,
+            )
     else:
-        update_fields = []
-        if not customer_user.display_name and line_display_name:
-            customer_user.display_name = line_display_name
-            update_fields.append("display_name")
-        if not customer_user.line_user_id:
-            customer_user.line_user_id = line_user_id
-            update_fields.append("line_user_id")
-        if update_fields:
-            customer_user.save(update_fields=update_fields)
+        customer_user = _restore_customer_user(
+            customer_user,
+            line_user_id=line_user_id,
+            display_name=line_display_name or customer_user.display_name,
+        )
 
     login_customer(request, customer_user)
 
@@ -400,6 +593,7 @@ def line_login_callback(request):
         return redirect(f"{reverse('customer_stamp_grant')}?token={pending_stamp_token}")
 
     return redirect("customer_dashboard")
+
 
 def google_login_start(request):
     state = secrets.token_urlsafe(32)
@@ -481,25 +675,36 @@ def google_login_callback(request):
 
     if customer_user is None:
         if email:
-            customer_user, _ = CustomerUser.objects.get_or_create(
-                email=email,
-                defaults={
-                    "google_user_id": google_key,
-                    "is_active": True,
-                }
-            )
-            if not customer_user.google_user_id:
-                customer_user.google_user_id = google_key
-                customer_user.save(update_fields=["google_user_id"])
+            existing_user = CustomerUser.objects.filter(email=email).first()
+            if existing_user:
+                customer_user = _restore_customer_user(
+                    existing_user,
+                    email=email,
+                    google_user_id=google_key,
+                )
+            else:
+                customer_user = CustomerUser.objects.create(
+                    email=email,
+                    google_user_id=google_key,
+                    is_active=True,
+                )
         else:
             temp_email = _make_temp_email("google", google_sub)
-            customer_user, _ = CustomerUser.objects.get_or_create(
-                email=temp_email,
-                defaults={
-                    "google_user_id": google_key,
-                    "is_active": True,
-                }
-            )
+            existing_user = CustomerUser.objects.filter(email=temp_email).first()
+            if existing_user:
+                customer_user = _restore_customer_user(
+                    existing_user,
+                    email=temp_email,
+                    google_user_id=google_key,
+                )
+            else:
+                customer_user = CustomerUser.objects.create(
+                    email=temp_email,
+                    google_user_id=google_key,
+                    is_active=True,
+                )
+    else:
+        customer_user = _restore_customer_user(customer_user, google_user_id=google_key)
 
     login_customer(request, customer_user)
 
@@ -510,6 +715,7 @@ def google_login_callback(request):
         return redirect(f"{reverse('customer_stamp_grant')}?token={pending_stamp_token}")
 
     return redirect("customer_dashboard")
+
 
 def store_google_login_start(request):
     state = secrets.token_urlsafe(32)
@@ -587,22 +793,21 @@ def store_google_login_callback(request):
 
     google_key = f"google:{google_sub}"
 
-    # 1. 既にGoogle連携済みならそれでログイン
     store_user = StoreUser.objects.filter(google_user_id=google_key).first()
 
-    # 2. 未連携なら、既存StoreUser.emailとGoogleメールの一致で連携
     if store_user is None and email:
         store_user = StoreUser.objects.filter(email=email).first()
         if store_user:
-            # 別アカウントに同じgoogle_user_idが入る事故防止
-            if not store_user.google_user_id:
-                store_user.google_user_id = google_key
-                store_user.save(update_fields=["google_user_id"])
-            elif store_user.google_user_id != google_key:
+            if store_user.google_user_id and store_user.google_user_id != google_key:
                 messages.error(request, "このGoogleアカウントは別の店舗アカウントに連携されています。")
                 return redirect("store_login")
 
-    # 3. 一致しなければ新規作成せず停止
+            store_user = _restore_store_user(
+                store_user,
+                email=email,
+                google_user_id=google_key,
+            )
+
     if store_user is None:
         messages.error(request, "このGoogleアカウントは店舗アカウントに登録されていません。先に店舗登録を行ってください。")
         return redirect("store_register")
@@ -612,6 +817,7 @@ def store_google_login_callback(request):
 
     return redirect("store_dashboard")
 
+
 def store_google_register_start(request):
     if request.method != "POST":
         return redirect("store_register")
@@ -620,6 +826,10 @@ def store_google_register_start(request):
 
     if not store_name:
         messages.error(request, "店舗名を入力してください。")
+        return redirect("store_register")
+
+    if StoreUser.objects.filter(store_name=store_name, is_deleted=False).exists():
+        messages.error(request, "この店舗名はすでに使用されています。")
         return redirect("store_register")
 
     state = secrets.token_urlsafe(32)
@@ -703,22 +913,42 @@ def store_google_register_callback(request):
 
     google_key = f"google:{google_sub}"
 
-    # すでにGoogle連携済みなら新規作成しない
-    if StoreUser.objects.filter(google_user_id=google_key).exists():
-        messages.error(request, "このGoogleアカウントは既に店舗アカウントに登録されています。ログインしてください。")
-        return redirect("store_login")
+    with transaction.atomic():
+        existing_by_google = StoreUser.objects.filter(google_user_id=google_key).first()
+        if existing_by_google and not existing_by_google.is_deleted:
+            messages.error(request, "このGoogleアカウントは既に店舗アカウントに登録されています。ログインしてください。")
+            return redirect("store_login")
 
-    # メールアドレスが既存なら新規作成しない
-    if StoreUser.objects.filter(email=email).exists():
-        messages.error(request, "このGoogleメールアドレスは既に登録されています。ログインしてください。")
-        return redirect("store_login")
+        existing_by_email = StoreUser.objects.filter(email=email).first()
+        existing_by_store_name = StoreUser.objects.filter(store_name=store_name).first()
 
-    user = StoreUser.objects.create_user(
-        email=email,
-        store_name=store_name,
-    )
-    user.google_user_id = google_key
-    user.save(update_fields=["google_user_id"])
+        if existing_by_store_name and not existing_by_store_name.is_deleted:
+            target = existing_by_email or existing_by_google
+            if not target or existing_by_store_name.pk != target.pk:
+                messages.error(request, "この店舗名はすでに使用されています。")
+                return redirect("store_register")
+
+        if existing_by_email:
+            user = _restore_store_user(
+                existing_by_email,
+                email=email,
+                store_name=store_name,
+                google_user_id=google_key,
+            )
+        elif existing_by_google:
+            user = _restore_store_user(
+                existing_by_google,
+                email=email,
+                store_name=store_name,
+                google_user_id=google_key,
+            )
+        else:
+            user = StoreUser.objects.create_user(
+                email=email,
+                store_name=store_name,
+            )
+            user.google_user_id = google_key
+            user.save(update_fields=["google_user_id"])
 
     login(request, user)
 
@@ -726,6 +956,7 @@ def store_google_register_callback(request):
     request.session.pop("pending_store_google_register_store_name", None)
 
     return redirect("store_dashboard")
+
 
 def _build_line_auth_url(redirect_uri, state):
     params = {
@@ -806,6 +1037,10 @@ def store_line_login_callback(request):
         messages.error(request, "このLINEアカウントは店舗アカウントに登録されていません。新規アカウント作成をしてください。")
         return redirect("store_register")
 
+    if store_user.is_deleted:
+        messages.error(request, "退会済みアカウントです。新規登録画面から再登録してください。")
+        return redirect("store_register")
+
     login(request, store_user)
     return redirect("store_dashboard")
 
@@ -818,6 +1053,10 @@ def store_line_register_start(request):
 
     if not store_name:
         messages.error(request, "店舗名を入力してください。")
+        return redirect("store_register")
+
+    if StoreUser.objects.filter(store_name=store_name, is_deleted=False).exists():
+        messages.error(request, "この店舗名はすでに使用されています。")
         return redirect("store_register")
 
     state = secrets.token_urlsafe(32)
@@ -858,21 +1097,104 @@ def store_line_register_callback(request):
         messages.error(request, "LINEユーザー情報を取得できませんでした。")
         return redirect("store_register")
 
-    if StoreUser.objects.filter(line_user_id=line_user_id).exists():
-        messages.error(request, "このLINEアカウントは既に店舗アカウントに登録されています。ログインしてください。")
-        return redirect("store_login")
-
     temp_email = _make_temp_email("store_line", line_user_id)
 
-    user = StoreUser.objects.create_user(
-        email=temp_email,
-        store_name=store_name,
-    )
-    user.line_user_id = line_user_id
-    user.save(update_fields=["line_user_id"])
+    with transaction.atomic():
+        existing_by_line = StoreUser.objects.filter(line_user_id=line_user_id).first()
+        if existing_by_line and not existing_by_line.is_deleted:
+            messages.error(request, "このLINEアカウントは既に店舗アカウントに登録されています。ログインしてください。")
+            return redirect("store_login")
+
+        existing_by_email = StoreUser.objects.filter(email=temp_email).first()
+        existing_by_store_name = StoreUser.objects.filter(store_name=store_name).first()
+
+        if existing_by_store_name and not existing_by_store_name.is_deleted:
+            target = existing_by_email or existing_by_line
+            if not target or existing_by_store_name.pk != target.pk:
+                messages.error(request, "この店舗名はすでに使用されています。")
+                return redirect("store_register")
+
+        if existing_by_email:
+            user = _restore_store_user(
+                existing_by_email,
+                email=temp_email,
+                store_name=store_name,
+                line_user_id=line_user_id,
+            )
+        elif existing_by_line:
+            user = _restore_store_user(
+                existing_by_line,
+                email=temp_email,
+                store_name=store_name,
+                line_user_id=line_user_id,
+            )
+        else:
+            user = StoreUser.objects.create_user(
+                email=temp_email,
+                store_name=store_name,
+            )
+            user.line_user_id = line_user_id
+            user.save(update_fields=["line_user_id"])
 
     request.session.pop("store_line_register_state", None)
     request.session.pop("pending_store_line_register_store_name", None)
 
     login(request, user)
     return redirect("store_dashboard")
+
+
+def _deactivate_customer_assets(customer_user):
+    CustomerStampCard.objects.filter(customer=customer_user).delete()
+    StampGrantLog.objects.filter(customer=customer_user).delete()
+    RewardCoupon.objects.filter(customer=customer_user).delete()
+
+
+def _deactivate_store_assets(store_user):
+    store_cards = StampCard.objects.filter(store_user=store_user)
+
+    CustomerStampCard.objects.filter(stamp_card__store_user=store_user).delete()
+    StampGrantLog.objects.filter(store_user=store_user).delete()
+    RewardCoupon.objects.filter(stamp_card__store_user=store_user).delete()
+    store_cards.delete()
+
+
+@customer_login_required
+def customer_delete_confirm_view(request):
+    customer_user = request.customer_user
+
+    if request.method == "POST":
+        with transaction.atomic():
+            _deactivate_customer_assets(customer_user)
+
+            customer_user.is_deleted = True
+            customer_user.deleted_at = timezone.now()
+            customer_user.is_active = False
+            customer_user.save(update_fields=["is_deleted", "deleted_at", "is_active"])
+
+        logout_customer(request)
+        messages.success(request, "退会処理が完了しました。")
+        return redirect("customer_login")
+
+    return render(request, "accounts/customer_delete_confirm.html")
+
+
+def store_delete_confirm_view(request):
+    if not request.user.is_authenticated:
+        return redirect("store_login")
+
+    store_user = request.user
+
+    if request.method == "POST":
+        with transaction.atomic():
+            _deactivate_store_assets(store_user)
+
+            store_user.is_deleted = True
+            store_user.deleted_at = timezone.now()
+            store_user.is_active = False
+            store_user.save(update_fields=["is_deleted", "deleted_at", "is_active"])
+
+        logout(request)
+        messages.success(request, "退会処理が完了しました。")
+        return redirect("store_login")
+
+    return render(request, "accounts/store_delete_confirm.html")
