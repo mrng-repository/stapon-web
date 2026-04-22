@@ -502,6 +502,14 @@ def line_login_start(request):
 
 def line_login_callback(request):
     error = request.GET.get("error")
+
+    print("=== LINE customer callback ===")
+    print("code =", request.GET.get("code"))
+    print("state =", request.GET.get("state"))
+    print("session_state =", request.session.get("line_login_state"))
+    print("session_key =", request.session.session_key)
+    print("full_path =", request.get_full_path())
+
     if error:
         messages.error(request, "LINEログインがキャンセルされたか、エラーが発生しました。")
         return redirect("customer_login")
@@ -1069,6 +1077,14 @@ def store_line_register_start(request):
 
 def store_line_register_callback(request):
     error = request.GET.get("error")
+
+    print("=== LINE store register callback ===")
+    print("code =", request.GET.get("code"))
+    print("state =", request.GET.get("state"))
+    print("session_state =", request.session.get("store_line_register_state"))
+    print("session_key =", request.session.session_key)
+    print("full_path =", request.get_full_path())
+    
     if error:
         messages.error(request, "LINE認証がキャンセルされたか、エラーが発生しました。")
         return redirect("store_register")
