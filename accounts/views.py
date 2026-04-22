@@ -484,8 +484,16 @@ def line_login_start(request):
     state = secrets.token_urlsafe(32)
     nonce = secrets.token_urlsafe(32)
 
+    print("=== LINE customer start ===")
+    print("session_key(before) =", request.session.session_key)
+    print("state =", state)
+    print("redirect_uri =", settings.LINE_REDIRECT_URI)
+    print("host =", request.get_host())
+    print("is_secure =", request.is_secure())
+
     request.session["line_login_state"] = state
     request.session["line_login_nonce"] = nonce
+    request.session.save()
 
     params = {
         "response_type": "code",
@@ -1006,7 +1014,16 @@ def _fetch_line_profile(code, redirect_uri):
 
 def store_line_login_start(request):
     state = secrets.token_urlsafe(32)
+
+    print("=== LINE store login start ===")
+    print("session_key(before) =", request.session.session_key)
+    print("state =", state)
+    print("redirect_uri =", settings.STORE_LINE_REDIRECT_URI)
+    print("host =", request.get_host())
+    print("is_secure =", request.is_secure())
+
     request.session["store_line_login_state"] = state
+    request.session.save()
 
     auth_url = _build_line_auth_url(settings.STORE_LINE_REDIRECT_URI, state)
     return redirect(auth_url)
@@ -1068,8 +1085,18 @@ def store_line_register_start(request):
         return redirect("store_register")
 
     state = secrets.token_urlsafe(32)
+
+    print("=== LINE store register start ===")
+    print("session_key(before) =", request.session.session_key)
+    print("state =", state)
+    print("store_name =", store_name)
+    print("redirect_uri =", settings.STORE_LINE_REGISTER_REDIRECT_URI)
+    print("host =", request.get_host())
+    print("is_secure =", request.is_secure())
+
     request.session["store_line_register_state"] = state
     request.session["pending_store_line_register_store_name"] = store_name
+    request.session.save()
 
     auth_url = _build_line_auth_url(settings.STORE_LINE_REGISTER_REDIRECT_URI, state)
     return redirect(auth_url)
@@ -1084,7 +1111,7 @@ def store_line_register_callback(request):
     print("session_state =", request.session.get("store_line_register_state"))
     print("session_key =", request.session.session_key)
     print("full_path =", request.get_full_path())
-    
+
     if error:
         messages.error(request, "LINE認証がキャンセルされたか、エラーが発生しました。")
         return redirect("store_register")
