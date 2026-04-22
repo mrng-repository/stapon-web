@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_subtext=request.user.email header_logo_url="/store/dashboard/" logout_url="/store/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">{{ page_title }}</h1>
+        <p class="stpn-page-subtext">来店促進用の通常クーポン内容や利用条件を設定します。</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message }}</div>
+    {% endfor %}
+
+    <div class="stpn-tab-nav" style="display:flex; gap:10px; margin-bottom:18px;">
+        <a
+            href="{% url 'store_coupon_create' %}"
+            class="stpn-tab {% if submit_label == '作成する' %}is-active{% endif %}"
+        >
+            作成
+        </a>
+
+        <a
+            href="{% url 'store_coupon_list' %}"
+            class="stpn-tab {% if submit_label != '作成する' %}is-active{% endif %}"
+        >
+            一覧
+        </a>
+    </div>
+
+    <div class="stpn-card">
+        <h2 class="stpn-card-title">{{ page_title }}</h2>
+
+        <form method="post" style="margin-top:16px;">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="stpn-message">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="stpn-form-group">
+                <label for="{{ form.title.id_for_label }}">クーポン名</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.description.id_for_label }}">説明</label>
+                {{ form.description }}
+                {{ form.description.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.discount_type.id_for_label }}">割引種別</label>
+                {{ form.discount_type }}
+                {{ form.discount_type.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.discount_value.id_for_label }}">割引値</label>
+                {{ form.discount_value }}
+                {{ form.discount_value.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.start_at.id_for_label }}">利用開始日時</label>
+                {{ form.start_at }}
+                {{ form.start_at.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.end_at.id_for_label }}">利用終了日時</label>
+                {{ form.end_at }}
+                {{ form.end_at.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.usage_note.id_for_label }}">利用条件メモ</label>
+                {{ form.usage_note }}
+                {{ form.usage_note.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.is_public.id_for_label }}">公開状態</label>
+                {{ form.is_public }}
+                {{ form.is_public.errors }}
+            </div>
+
+            <div class="stpn-form-group">
+                <label for="{{ form.is_active.id_for_label }}">有効状態</label>
+                {{ form.is_active }}
+                {{ form.is_active.errors }}
+            </div>
+
+            <button type="submit" class="stpn-btn">{{ submit_label }}</button>
+        </form>
+
+        <div class="stpn-bottom-nav">
+            <a href="{% url 'store_coupon_list' %}" class="stpn-back-link">
+                ← 一覧へ戻る
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

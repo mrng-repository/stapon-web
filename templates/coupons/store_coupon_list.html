@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}通常クーポン管理 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_subtext=request.user.email header_logo_url="/store/dashboard/" logout_url="/store/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">通常クーポン管理</h1>
+        <p class="stpn-page-subtext">通常クーポンの作成・確認・編集・削除を行います。</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message }}</div>
+    {% endfor %}
+
+    <div class="stpn-tab-nav" style="display:flex; gap:10px; margin-bottom:18px;">
+        <a
+            href="{% url 'store_coupon_create' %}"
+            class="stpn-tab"
+        >
+            作成
+        </a>
+
+        <a
+            href="{% url 'store_coupon_list' %}"
+            class="stpn-tab is-active"
+        >
+            一覧
+        </a>
+    </div>
+
+    <div class="stpn-card">
+        <h2 class="stpn-card-title">作成済みクーポン一覧</h2>
+
+        {% if coupons %}
+            <div style="margin-top: 16px; display: grid; gap: 12px;">
+                {% for coupon in coupons %}
+                    <div style="padding: 14px; border: 1px solid #e5eefc; border-radius: 14px; background: #fdfefe;">
+                        <div style="display:flex; justify-content:space-between; gap:12px; align-items:flex-start;">
+                            <div style="flex:1;">
+                                <p style="margin:0 0 6px; font-size:16px; font-weight:800;">{{ coupon.title }}</p>
+
+                                <p style="margin:0 0 6px; font-size:14px; color:#6b7280;">
+                                    割引種別: {{ coupon.get_discount_type_display }}
+                                </p>
+
+                                <p style="margin:0 0 6px; font-size:14px; color:#6b7280;">
+                                    割引値:
+                                    {% if coupon.discount_type == "free" %}
+                                        無料
+                                    {% else %}
+                                        {{ coupon.discount_value }}
+                                    {% endif %}
+                                </p>
+
+                                <p style="margin:0 0 6px; font-size:14px; color:#6b7280;">
+                                    利用期間: {{ coupon.start_at }} ～ {{ coupon.end_at }}
+                                </p>
+
+                                {% if coupon.description %}
+                                    <p style="margin:0 0 6px; font-size:13px; color:#6b7280; line-height:1.6;">
+                                        {{ coupon.description }}
+                                    </p>
+                                {% endif %}
+
+                                {% if coupon.usage_note %}
+                                    <p style="margin:0; font-size:13px; color:#6b7280; line-height:1.6;">
+                                        利用条件: {{ coupon.usage_note }}
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                            <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end;">
+                                {% if coupon.is_public %}
+                                    <span class="stpn-badge">公開</span>
+                                {% else %}
+                                    <span class="stpn-badge" style="background:#f3f4f6; color:#4b5563;">非公開</span>
+                                {% endif %}
+
+                                {% if coupon.is_active %}
+                                    <span class="stpn-badge">有効</span>
+                                {% else %}
+                                    <span class="stpn-badge" style="background:#f3f4f6; color:#4b5563;">無効</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div style="display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;">
+                            <a
+                                href="{% url 'store_coupon_edit' coupon.pk %}"
+                                style="padding:10px 14px; border-radius:10px; text-decoration:none; background:#eff6ff; color:#1d4ed8; font-weight:700; font-size:13px;"
+                            >
+                                編集
+                            </a>
+
+                            <a
+                                href="{% url 'store_coupon_delete' coupon.pk %}"
+                                style="padding:10px 14px; border-radius:10px; text-decoration:none; background:#fef2f2; color:#dc2626; font-weight:700; font-size:13px;"
+                            >
+                                削除
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="margin-top:16px; color:#6b7280;">まだ通常クーポンは作成されていません。</p>
+        {% endif %}
+
+        <div class="stpn-bottom-nav">
+            <a href="{% url 'store_dashboard' %}" class="stpn-back-link">
+                ← 戻る
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

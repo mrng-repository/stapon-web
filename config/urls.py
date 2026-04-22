@@ -29,4 +29,5 @@ urlpatterns = [
     path('store/', include('accounts.urls')),
     path('store/stampcards/', include('stampcards.urls')),
     path('cards/', include('customer_cards.urls')),
+    path("store/coupons/", include("coupons.urls")),
 ]

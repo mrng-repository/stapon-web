@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'accounts',
     'stampcards',
     'customer_cards',
+    'coupons',
 ]
 
 MIDDLEWARE = [

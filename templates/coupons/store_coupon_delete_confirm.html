@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}通常クーポン削除確認 | スタポン{% endblock %}
+
+{% block header %}
+    {% include "includes/app_header.html" with header_subtext=request.user.email header_logo_url="/store/dashboard/" logout_url="/store/logout/" %}
+{% endblock %}
+
+{% block content %}
+<div class="stpn-page-wrap">
+    <div class="stpn-page-head">
+        <h1 class="stpn-page-title">通常クーポン削除確認</h1>
+        <p class="stpn-page-subtext">削除前に内容を確認してください。</p>
+    </div>
+
+    {% for message in messages %}
+        <div class="stpn-message">{{ message }}</div>
+    {% endfor %}
+
+    <div class="stpn-card">
+        <h2 class="stpn-card-title">{{ coupon.title }}</h2>
+
+        <p class="stpn-card-text" style="margin-top:12px;">
+            このクーポンを削除しますか？
+        </p>
+
+        <p class="stpn-card-text" style="margin-top:8px;">
+            削除は論理削除で行われます。
+        </p>
+
+        <form method="post" style="margin-top:20px;">
+            {% csrf_token %}
+            <button type="submit" class="stpn-btn" style="background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);">
+                削除する
+            </button>
+        </form>
+
+        <div class="stpn-bottom-nav">
+            <a href="{% url 'store_coupon_list' %}" class="stpn-back-link">
+                ← キャンセル
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
