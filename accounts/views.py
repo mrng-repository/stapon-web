@@ -13,7 +13,7 @@ from django.core.mail import send_mail
 from django.conf import settings
 from django.db import transaction
 
-from .models import StoreUser, EmailOTP, CustomerUser, CustomerEmailOTP
+from .models import StoreUser, EmailOTP, CustomerUser, CustomerEmailOTP, OAuthState
 from stampcards.models import StampCard, CustomerStampCard, StampGrantLog, RewardCoupon
 from .forms import (
     StoreLoginForm,
@@ -484,12 +484,27 @@ def line_login_start(request):
     state = secrets.token_urlsafe(32)
     nonce = secrets.token_urlsafe(32)
 
+    if request.session.session_key is None:
+        request.session.save()
+
     print("=== LINE customer start ===")
     print("session_key(before) =", request.session.session_key)
     print("state =", state)
     print("redirect_uri =", settings.LINE_REDIRECT_URI)
     print("host =", request.get_host())
     print("is_secure =", request.is_secure())
+    print("existing_line_login_state(before) =", request.session.get("line_login_state"))
+
+    OAuthState.objects.create(
+        provider="line",
+        purpose="customer_line_login",
+        state=state,
+        session_key=request.session.session_key,
+        payload={
+            "nonce": nonce,
+        },
+        expires_at=OAuthState.default_expiry(),
+    )
 
     request.session["line_login_state"] = state
     request.session["line_login_nonce"] = nonce
@@ -526,9 +541,41 @@ def line_login_callback(request):
     state = request.GET.get("state")
     session_state = request.session.get("line_login_state")
 
-    if not code or not state or not session_state or state != session_state:
+    if not code or not state:
         messages.error(request, "LINEログインの認証状態を確認できませんでした。")
         return redirect("customer_login")
+
+    oauth_state = OAuthState.objects.filter(
+        provider="line",
+        purpose="customer_line_login",
+        state=state,
+        is_used=False,
+    ).order_by("-created_at").first()
+
+    if not oauth_state:
+        print("=== LINE customer mismatch: oauth_state not found ===")
+        print("code =", code)
+        print("state =", state)
+        print("session_state =", session_state)
+        print("session_key =", request.session.session_key)
+        print("referer =", request.META.get("HTTP_REFERER"))
+        print("user_agent =", request.META.get("HTTP_USER_AGENT"))
+        messages.error(request, "LINEログインの認証状態を確認できませんでした。")
+        return redirect("customer_login")
+
+    if oauth_state.is_expired():
+        print("=== LINE customer mismatch: oauth_state expired ===")
+        print("code =", code)
+        print("state =", state)
+        print("session_state =", session_state)
+        print("session_key =", request.session.session_key)
+        print("referer =", request.META.get("HTTP_REFERER"))
+        print("user_agent =", request.META.get("HTTP_USER_AGENT"))
+        messages.error(request, "LINEログインの有効期限が切れています。もう一度お試しください。")
+        return redirect("customer_login")
+
+    oauth_state.is_used = True
+    oauth_state.save(update_fields=["is_used"])
 
     token_url = "https://api.line.me/oauth2/v2.1/token"
     token_data = {

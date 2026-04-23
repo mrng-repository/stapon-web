@@ -95,3 +95,35 @@ class CustomerEmailOTP(models.Model):
 
     def is_expired(self):
         return timezone.now() > self.expires_at
+
+class OAuthState(models.Model):
+    PROVIDER_CHOICES = [
+        ("line", "LINE"),
+        ("google", "Google"),
+    ]
+
+    PURPOSE_CHOICES = [
+        ("customer_line_login", "顧客LINEログイン"),
+    ]
+
+    provider = models.CharField(max_length=20, choices=PROVIDER_CHOICES)
+    purpose = models.CharField(max_length=50, choices=PURPOSE_CHOICES)
+    state = models.CharField(max_length=255, unique=True)
+    session_key = models.CharField(max_length=255, blank=True, null=True)
+    payload = models.JSONField(blank=True, null=True)
+    is_used = models.BooleanField(default=False)
+    expires_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def is_expired(self):
+        return timezone.now() > self.expires_at
+
+    @classmethod
+    def default_expiry(cls):
+        return timezone.now() + timedelta(minutes=10)
+
+    def __str__(self):
+        return f"{self.provider} / {self.purpose} / {self.state}"
